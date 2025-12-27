@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.cb.minhabagunca" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>Minha Bagunça</name>
+    <description>
+        A sample Apache Cordova application that responds to the deviceready event.
+    </description>
+    <author email="dev@cordova.apache.org" href="https://cordova.apache.org">
+        Apache Cordova Team
+    </author>
+    <content src="index.html" />
+    <access origin="*" />
+    <allow-navigation href="*" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <platform name="android">
+    <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/splash/splashscreen.xml" />
+    <preference name="AndroidWindowSplashScreenBackground" value="#ffffff" />
+    <preference name="AndroidWindowSplashScreenIconBackgroundColor" value="#ffffff" />
+    <resource-file src="res/values/themes.xml" target="app/src/main/res/values/themes.xml" />
+    <resource-file src="res/values-night/themes.xml" target="app/src/main/res/values-night/themes.xml" />
+    <resource-file src="res/values/colors-night.xml" target="app/src/main/res/values-night/colors.xml" />
+        <config-file target="AndroidManifest.xml" parent="/*">
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+            <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+        </config-file>
+        <edit-config target="AndroidManifest.xml" parent="/manifest/application" mode="merge">
+            <application android:requestLegacyExternalStorage="true" android:forceDarkAllowed="false" />
+        </edit-config>
+        <edit-config target="AndroidManifest.xml" parent="/manifest/application/activity[@android:name='MainActivity']" mode="merge">
+            <activity android:forceDarkAllowed="false" />
+        </edit-config>
+        <plugin name="cordova-plugin-local-notification" spec="1.2.3">
+            <variable name="ANDROIDX_CORE_VERSION" value="1.12.0" />
+        </plugin>
+        <plugin name="cordova-plugin-device" spec="3.0.0" />
+        <plugin name="cordova-plugin-android-permissions" spec="1.1.5" />
+        <plugin name="cordova-plugin-file" spec="8.1.3" />
+        <icon src="res/mipmap-anydpi-v26/ic_launcher.xml" />
+    <icon monochrome="res/mipmap-mdpi/ic_launcher_monochrome.png" 
+          background="res/mipmap-mdpi/ic_launcher_background.png" 
+          density="mdpi" 
+          foreground="res/mipmap-mdpi/ic_launcher_foreground.png" />
+    <icon monochrome="res/mipmap-hdpi/ic_launcher_monochrome.png" 
+          background="res/mipmap-hdpi/ic_launcher_background.png" 
+          density="hdpi" 
+          foreground="res/mipmap-hdpi/ic_launcher_foreground.png" />
+    <icon monochrome="res/mipmap-xhdpi/ic_launcher_monochrome.png" 
+          background="res/mipmap-xhdpi/ic_launcher_background.png" 
+          density="xhdpi" 
+          foreground="res/mipmap-xhdpi/ic_launcher_foreground.png" />
+    <icon monochrome="res/mipmap-xxhdpi/ic_launcher_monochrome.png" 
+          background="res/mipmap-xxhdpi/ic_launcher_background.png" 
+          density="xxhdpi" 
+          foreground="res/mipmap-xxhdpi/ic_launcher_foreground.png" />
+    <icon monochrome="res/mipmap-xxxhdpi/ic_launcher_monochrome.png" 
+          background="res/mipmap-xxxhdpi/ic_launcher_background.png" 
+          density="xxxhdpi" 
+          foreground="res/mipmap-xxxhdpi/ic_launcher_foreground.png" />
+</platform>
+</widget>

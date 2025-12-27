@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "ESNext",
+    "lib": ["DOM", "ES2019"],
+    "jsx": "react-jsx",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "checkJs": false,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "www/**/*",
+    "typings/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "platforms",
+    "plugins",
+    "build"
+  ]
+}

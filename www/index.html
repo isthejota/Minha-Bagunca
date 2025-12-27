@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Bagunça - Organizador Criativo</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --primary: #ee9d2b;
+            --bg-paper: #f8f7f6;
+            --card-bg: #ffffff;
+            --text-color: #111827;
+            --muted-color: #9ca3af;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-paper);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1;
+        }
+
+        .paper-bg {
+            background-image: linear-gradient(to right, rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        .paper-card {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+        }
+
+        .paper-card:active {
+            transform: scale(0.98);
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .animate-content {
+            animation: fadeInScale 0.4s ease-out forwards;
+        }
+
+        /* Dark mode variables and common overrides */
+        .dark {
+            --primary: #ee9d2b;
+            --bg-paper: #0b1220;
+            --card-bg: #0f1724;
+            --card-elev: rgba(0, 0, 0, 0.6);
+            --text-color: #e6eef8;
+            --muted-color: #9ca3af;
+            --muted-bg: rgba(255, 255, 255, 0.02);
+            --muted-bg-2: rgba(255, 255, 255, 0.03);
+            --border-weak: rgba(255, 255, 255, 0.04);
+        }
+
+        /* Make common utilities adapt in dark mode (override Tailwind utilities where used) */
+        .dark body,
+        .dark .app-root {
+            background-color: var(--bg-paper) !important;
+            color: var(--text-color) !important;
+        }
+
+        .dark .bg-white {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+
+        .dark .bg-white\/90 {
+            background-color: rgba(255, 255, 255, 0.03) !important;
+        }
+
+        .dark .bg-stone-50 {
+            background-color: var(--muted-bg) !important;
+        }
+
+        .dark .bg-stone-100 {
+            background-color: var(--muted-bg-2) !important;
+        }
+
+        /* Ensure buttons on pale backgrounds remain readable */
+        .dark .bg-orange-50 {
+            background-color: rgba(245, 158, 11, 0.12) !important;
+            color: var(--text-color) !important;
+        }
+
+        .dark .bg-stone-50,
+        .dark .bg-stone-100 {
+            color: var(--text-color) !important;
+        }
+
+        .dark .text-stone-800 {
+            color: var(--text-color) !important;
+        }
+
+        .dark .text-stone-400,
+        .dark .text-stone-300 {
+            color: var(--muted-color) !important;
+        }
+
+        /* Ensure mid-weight stone text used in settings is readable */
+        .dark .text-stone-700 {
+            color: var(--text-color) !important;
+        }
+
+        .dark .text-stone-500 {
+            color: var(--muted-color) !important;
+        }
+
+        .dark .border-stone-100,
+        .dark .border-stone-50 {
+            border-color: var(--border-weak) !important;
+        }
+
+        .dark .border-white {
+            border-color: var(--border-weak) !important;
+        }
+
+        /* Nav / header adjustments */
+        .dark nav,
+        .dark header {
+            background-color: rgba(255, 255, 255, 0.02) !important;
+        }
+
+        /* paper background grid lines should be subtle in dark mode */
+        .dark .paper-bg {
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        }
+
+        /* Card elevation / shadows more subtle on dark background */
+        .dark .paper-card {
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55) !important;
+        }
+
+        .dark .shadow-2xl,
+        .dark .shadow-xl {
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6) !important;
+        }
+
+        /* Buttons and floating action button */
+        .dark .bg-orange-400 {
+            background-color: #f59e0b !important;
+        }
+
+        /* Tape accent muted */
+        .dark .tape {
+            background: rgba(238, 157, 43, 0.12);
+        }
+
+        html,
+        body,
+        #root {
+            height: 100%;
+        }
+
+        .app-root {
+            min-height: 100vh;
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-top: env(safe-area-inset-top);
+        }
+
+        .tab-active {
+            color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .tab-inactive {
+            color: #d1d5db;
+        }
+
+        .tape {
+            position: absolute;
+            width: 60px;
+            height: 20px;
+            background: rgba(238, 157, 43, 0.2);
+            backdrop-filter: blur(2px);
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-2deg);
+            border-radius: 2px;
+        }
+
+        /* Remove selection / focus white highlight on interactive elements */
+        * {
+            -webkit-tap-highlight-color: transparent !important;
+        }
+
+        button,
+        a,
+        input,
+        select,
+        textarea,
+        label {
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            outline: none;
+        }
+
+        /* Prevent default active/focus background changing to white */
+        button:focus,
+        button:active,
+        a:focus,
+        a:active,
+        input:focus,
+        input:active,
+        select:focus,
+        select:active,
+        textarea:focus,
+        textarea:active,
+        .btn-ghost:focus,
+        .btn-ghost:active,
+        .switch .slider:active {
+            background-color: transparent !important;
+            color: inherit !important;
+            box-shadow: none !important;
+            border-color: inherit !important;
+        }
+
+        /* Specific: disable hover:bg-stone-50 active highlight on touch for setting rows */
+        .hover\:bg-stone-50:active,
+        .p-6.hover\:bg-stone-50:active,
+        .hover\:bg-stone-50:focus,
+        .p-6.hover\:bg-stone-50:focus {
+            background-color: transparent !important;
+            color: inherit !important;
+        }
+
+        /* Force consistent dark background and readable text for settings rows in dark mode */
+        .dark .p-6.hover\:bg-stone-50,
+        .dark .p-6.hover\:bg-stone-50:active,
+        .dark .p-6.hover\:bg-stone-50:focus,
+        .dark .p-6.hover\:bg-stone-50:visited {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+
+        .dark .p-6.hover\:bg-stone-50 * {
+            color: var(--text-color) !important;
+        }
+
+        /* Also ensure the small pill inside retains dark background when active */
+        .dark .p-6 .btn-ghost,
+        .dark .p-6 .size-10 {
+            background-color: rgba(255, 255, 255, 0.03) !important;
+            color: var(--text-color) !important;
+        }
+
+        /* Ensure ghost/pale buttons keep readable background on active */
+        .btn-ghost:active,
+        .btn-ghost:focus {
+            background-color: rgba(255, 255, 255, 0.04) !important;
+        }
+
+        /* Keep switch knob appearance stable on touch */
+        .switch .slider::after {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .switch input:active+.slider::after,
+        .switch input:focus+.slider::after {
+            transform: translateX(0) !important;
+        }
+
+
+        /* Modern switch */
+        .switch {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .switch input {
+            display: none;
+        }
+
+        .switch .slider {
+            width: 46px;
+            height: 26px;
+            background: #e6e6e6;
+            display: inline-block;
+            border-radius: 999px;
+            position: relative;
+            transition: all .25s ease;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+
+        .switch .slider::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: all .25s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .switch input:checked+.slider {
+            background: var(--primary);
+        }
+
+        .switch input:checked+.slider::after {
+            transform: translateX(20px);
+        }
+
+        .switch.small .slider {
+            width: 36px;
+            height: 20px;
+        }
+
+        .switch.small .slider::after {
+            width: 14px;
+            height: 14px;
+            top: 3px;
+            left: 3px;
+        }
+
+        /* Dark-mode switch colors */
+        .dark .switch .slider {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .dark .switch input:checked+.slider {
+            background: var(--primary);
+        }
+
+        /* Modern pill buttons */
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-weight: 700;
+            box-shadow: 0 6px 18px rgba(13, 23, 36, 0.12);
+            border: none;
+        }
+
+        /* Ghost / secondary pill — make legible on light and dark backgrounds */
+        .btn-ghost {
+            background: rgba(15, 23, 42, 0.04);
+            color: var(--text-color);
+            padding: 7px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(15, 23, 42, 0.06);
+            font-weight: 700;
+        }
+
+        .dark .btn-ghost {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-color);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        /* Document paragraph boxes: white in light mode, card color in dark mode */
+        .doc-paragraph {
+            background: var(--card-bg);
+            color: var(--text-color);
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 8px 24px rgba(13, 23, 36, 0.04);
+        }
+
+        .dark .doc-paragraph {
+            background: var(--card-bg) !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+        }
+
+        /* Modal card: whole modal boxes and flaps (header/footer) use card background and switch with dark mode */
+        .modal-card {
+            background: var(--card-bg) !important;
+            color: var(--text-color) !important;
+            border-radius: 1rem;
+        }
+
+        .modal-card.p-0 {
+            padding: 0 !important;
+        }
+
+        .modal-card .btn-ghost {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .dark .modal-card {
+            background: var(--card-bg) !important;
+            color: var(--text-color) !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+        }
+
+        /* Ensure clear contrast for headings and small text inside modals in light mode */
+        .modal-card h3,
+        .modal-card p,
+        .modal-card .text-xs,
+        .modal-card .switch-label,
+        .modal-card .text-sm {
+            color: #0f1724 !important;
+        }
+
+        .modal-card .btn-ghost {
+            color: #0f1724 !important;
+            border-color: rgba(15, 23, 42, 0.08) !important;
+        }
+
+        /* Dark-mode overrides keep using CSS variables */
+        .dark .modal-card h3,
+        .dark .modal-card p,
+        .dark .modal-card .text-xs,
+        .dark .modal-card .switch-label,
+        .dark .modal-card .text-sm {
+            color: var(--text-color) !important;
+        }
+
+        .dark .modal-card .btn-ghost {
+            color: var(--text-color) !important;
+            border-color: rgba(255, 255, 255, 0.04) !important;
+        }
+
+        /* Share badge animation and colors */
+        .share-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 110px;
+            color: white;
+            background: var(--primary);
+            box-shadow: 0 8px 24px rgba(13, 23, 36, 0.12);
+            transform-origin: center;
+            animation: badgeIn .18s ease-out;
+            z-index: 60;
+        }
+
+        .share-badge.share-copied {
+            background: #10b981;
+        }
+
+        .share-badge.share-done {
+            background: var(--primary);
+        }
+
+        .share-badge.share-error {
+            background: #ef4444;
+        }
+
+        @keyframes badgeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px) scale(0.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes badgeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(6px) scale(0.96);
+            }
+        }
+
+        /* small text label next to switch */
+        .switch-label {
+            margin-left: 10px;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+    </style>
+    <script src="js/react.js"></script>
+    <script src="js/react-dom.js"></script>
+    <script src="js/prop-types.js"></script>
+    <script src="js/recharts.js"></script>
+    <script src="js/babel.min.js"></script>
+</head>
+
+<body class="paper-bg">
+    <div id="root"></div>
+    <script src="cordova.js"></script>
+    <!-- Debug helper: show runtime errors on-screen and in console -->
+    <script>
+        (function () {
+            window.__appErrors = [];
+            window.addEventListener('error', function (e) {
+                try { window.__appErrors.push((e && e.message) || String(e)); } catch (err) { }
+                console.error('Captured error', e.error || e.message || e);
+                showAppError(e.error || e.message || e);
+            });
+            window.addEventListener('unhandledrejection', function (ev) {
+                try { window.__appErrors.push(String(ev.reason)); } catch (err) { }
+                console.error('UnhandledRejection', ev.reason);
+                showAppError(ev.reason);
+            });
+            function showAppError(err) {
+                try {
+                    var id = 'app-error-overlay';
+                    var el = document.getElementById(id);
+                    if (!el) {
+                        el = document.createElement('div'); el.id = id;
+                        el.style.cssText = 'position:fixed;left:12px;right:12px;top:12px;padding:12px;border-radius:8px;background:rgba(255,16,16,0.06);color:#900;font-family:monospace;z-index:99999;max-height:40vh;overflow:auto;backdrop-filter:blur(4px);border:1px solid rgba(150,0,0,0.08)';
+                        document.body.appendChild(el);
+                    }
+                    var msg = (err && err.stack) ? err.stack : String(err);
+                    el.innerText = 'App runtime error:\n' + msg;
+                } catch (e) { console.error(e); }
+            }
+            // Small ready log so you know index.html loaded
+            console.log('index.html helper initialized');
+        })();
+    </script>
+
+    <!-- App (transpilado no cliente via Babel standalone) -->
+    <script type="text/babel" src="js/app.jsx" data-presets="env,react"></script>
+</body>
+
+</html>
