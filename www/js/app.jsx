@@ -542,7 +542,7 @@ const DailyList = ({ tasks, onToggle, onDelete, darkMode }) => {
 const App = () => {
     // Version Control
     const APP_VERSION = '1.0.0'; // Must match config.xml version
-    const VERSION_CONTROL_URL = 'https://raw.githubusercontent.com/isthejota/minha-bagunca/main/version-control.json';
+    const VERSION_CONTROL_URL = 'https://raw.githubusercontent.com/isthejota/Minha-Bagunca/main/version-control.json';
 
     const [tasks, setTasks] = useState(() => {
         const saved = localStorage.getItem('minha-bagunca-tasks');
