@@ -6,6 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minha Bagunça - Organizador Criativo</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            DEFAULT: 'var(--primary)',
+                            light: 'var(--primary-light)',
+                            shadow: 'var(--primary-shadow)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
@@ -15,10 +31,15 @@
     <style>
         :root {
             --primary: #ee9d2b;
+            --primary-light: rgba(238, 157, 43, 0.05);
+            --primary-shadow: rgba(238, 157, 43, 0.12);
+            --primary-gradient: linear-gradient(135deg, #ee9d2b, #f59e0b);
+            --grid-color: rgba(0, 0, 0, 0.02);
             --bg-paper: #f8f7f6;
             --card-bg: #ffffff;
             --text-color: #111827;
             --muted-color: #9ca3af;
+            --border-weak: rgba(0, 0, 0, 0.05);
         }
 
         body {
@@ -39,13 +60,15 @@
         }
 
         .paper-bg {
-            background-image: linear-gradient(to right, rgba(0, 0, 0, 0.02) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+            background-image: linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
             background-size: 24px 24px;
+            transition: background-color 0.5s ease;
         }
 
         .paper-card {
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+            box-shadow: 0 8px 24px var(--primary-shadow);
         }
 
         .paper-card:active {
@@ -77,22 +100,19 @@
             animation: fadeInScale 0.4s ease-out forwards;
         }
 
-        /* Dark mode variables and common overrides */
+        /* Premium Dark Mode Variables */
         .dark {
             --primary: #ee9d2b;
-            --bg-paper: #0b1220;
-            --card-bg: #0f1724;
-            --card-elev: rgba(0, 0, 0, 0.6);
-            --text-color: #e6eef8;
-            --muted-color: #9ca3af;
-            --muted-bg: rgba(255, 255, 255, 0.02);
-            --muted-bg-2: rgba(255, 255, 255, 0.03);
-            --border-weak: rgba(255, 255, 255, 0.04);
+            --bg-paper: #09090b;
+            --grid-color: rgba(255, 255, 255, 0.02);
+            --card-bg: #18181b;
+            --text-color: #f4f4f5;
+            --muted-color: #a1a1aa;
+            --border-weak: #27272a;
         }
 
-        /* Make common utilities adapt in dark mode (override Tailwind utilities where used) */
-        .dark body,
-        .dark .app-root {
+        /* Global Overrides for Dark Mode - Only applied when .dark class is present */
+        .dark body {
             background-color: var(--bg-paper) !important;
             color: var(--text-color) !important;
         }
@@ -102,30 +122,20 @@
             color: var(--text-color) !important;
         }
 
-        .dark .bg-white\/90 {
-            background-color: rgba(255, 255, 255, 0.03) !important;
-        }
-
         .dark .bg-stone-50 {
-            background-color: var(--muted-bg) !important;
-        }
-
-        .dark .bg-stone-100 {
-            background-color: var(--muted-bg-2) !important;
-        }
-
-        /* Ensure buttons on pale backgrounds remain readable */
-        .dark .bg-orange-50 {
-            background-color: rgba(245, 158, 11, 0.12) !important;
+            background-color: #27272a !important;
+            /* Zinc 800 */
             color: var(--text-color) !important;
         }
 
-        .dark .bg-stone-50,
         .dark .bg-stone-100 {
+            background-color: #3f3f46 !important;
+            /* Zinc 700 */
             color: var(--text-color) !important;
         }
 
-        .dark .text-stone-800 {
+        .dark .text-stone-800,
+        .dark .text-stone-700 {
             color: var(--text-color) !important;
         }
 
@@ -134,22 +144,19 @@
             color: var(--muted-color) !important;
         }
 
-        /* Ensure mid-weight stone text used in settings is readable */
-        .dark .text-stone-700 {
-            color: var(--text-color) !important;
-        }
-
-        .dark .text-stone-500 {
-            color: var(--muted-color) !important;
-        }
-
         .dark .border-stone-100,
         .dark .border-stone-50 {
             border-color: var(--border-weak) !important;
         }
 
+        .dark .paper-bg {
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        }
+
+        /* Border adjustments */
         .dark .border-white {
-            border-color: var(--border-weak) !important;
+            border-color: var(--border-weak);
         }
 
         /* Nav / header adjustments */
@@ -165,7 +172,7 @@
 
         /* Card elevation / shadows more subtle on dark background */
         .dark .paper-card {
-            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55) !important;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
         }
 
         .dark .shadow-2xl,
@@ -174,13 +181,12 @@
         }
 
         /* Buttons and floating action button */
-        .dark .bg-orange-400 {
-            background-color: #f59e0b !important;
-        }
+        /* Legacy overrides removed to support dynamic themes */
 
-        /* Tape accent muted */
+        /* Tape accent muted in dark mode */
         .dark .tape {
-            background: rgba(238, 157, 43, 0.12);
+            background: var(--primary);
+            opacity: 0.12;
         }
 
         html,
@@ -208,12 +214,14 @@
             position: absolute;
             width: 60px;
             height: 20px;
-            background: rgba(238, 157, 43, 0.2);
+            background: var(--primary);
+            opacity: 0.15;
             backdrop-filter: blur(2px);
             top: -10px;
             left: 50%;
             transform: translateX(-50%) rotate(-2deg);
             border-radius: 2px;
+            transition: background 0.5s ease;
         }
 
         /* Remove selection / focus white highlight on interactive elements */
@@ -263,22 +271,14 @@
         }
 
         /* Force consistent dark background and readable text for settings rows in dark mode */
-        .dark .p-6.hover\:bg-stone-50,
-        .dark .p-6.hover\:bg-stone-50:active,
-        .dark .p-6.hover\:bg-stone-50:focus,
-        .dark .p-6.hover\:bg-stone-50:visited {
-            background-color: var(--card-bg) !important;
-            color: var(--text-color) !important;
-        }
-
-        .dark .p-6.hover\:bg-stone-50 * {
-            color: var(--text-color) !important;
+        .dark .p-6.hover\:bg-stone-50 {
+            background-color: var(--card-bg);
+            color: var(--text-color);
         }
 
         /* Also ensure the small pill inside retains dark background when active */
-        .dark .p-6 .btn-ghost,
-        .dark .p-6 .size-10 {
-            background-color: rgba(255, 255, 255, 0.03) !important;
+        .dark .p-6 .size-10.rounded-2xl {
+            background-color: rgba(255, 255, 255, 0.05) !important;
             color: var(--text-color) !important;
         }
 
@@ -426,17 +426,21 @@
         }
 
         /* Ensure clear contrast for headings and small text inside modals in light mode */
-        .modal-card h3,
+        .modal-card h3 {
+            color: #0f1724;
+        }
+
         .modal-card p,
         .modal-card .text-xs,
         .modal-card .switch-label,
         .modal-card .text-sm {
-            color: #0f1724 !important;
+            color: #4b5563;
         }
 
         .modal-card .btn-ghost {
             color: #0f1724 !important;
-            border-color: rgba(15, 23, 42, 0.08) !important;
+            border-color: rgba(15, 23, 42, 0.1) !important;
+            background-color: rgba(0, 0, 0, 0.02) !important;
         }
 
         /* Dark-mode overrides keep using CSS variables */
@@ -445,7 +449,7 @@
         .dark .modal-card .text-xs,
         .dark .modal-card .switch-label,
         .dark .modal-card .text-sm {
-            color: var(--text-color) !important;
+            color: var(--text-color);
         }
 
         .dark .modal-card .btn-ghost {
@@ -522,34 +526,34 @@
     <script src="cordova.js"></script>
     <!-- Debug helper: show runtime errors on-screen and in console -->
     <script>
-        (function () {
-            window.__appErrors = [];
-            window.addEventListener('error', function (e) {
-                try { window.__appErrors.push((e && e.message) || String(e)); } catch (err) { }
-                console.error('Captured error', e.error || e.message || e);
-                showAppError(e.error || e.message || e);
-            });
-            window.addEventListener('unhandledrejection', function (ev) {
-                try { window.__appErrors.push(String(ev.reason)); } catch (err) { }
-                console.error('UnhandledRejection', ev.reason);
-                showAppError(ev.reason);
-            });
-            function showAppError(err) {
-                try {
-                    var id = 'app-error-overlay';
-                    var el = document.getElementById(id);
-                    if (!el) {
-                        el = document.createElement('div'); el.id = id;
-                        el.style.cssText = 'position:fixed;left:12px;right:12px;top:12px;padding:12px;border-radius:8px;background:rgba(255,16,16,0.06);color:#900;font-family:monospace;z-index:99999;max-height:40vh;overflow:auto;backdrop-filter:blur(4px);border:1px solid rgba(150,0,0,0.08)';
-                        document.body.appendChild(el);
-                    }
-                    var msg = (err && err.stack) ? err.stack : String(err);
-                    el.innerText = 'App runtime error:\n' + msg;
-                } catch (e) { console.error(e); }
-            }
-            // Small ready log so you know index.html loaded
-            console.log('index.html helper initialized');
-        })();
+            (function () {
+                window.__appErrors = [];
+                window.addEventListener('error', function (e) {
+                    try { window.__appErrors.push((e && e.message) || String(e)); } catch (err) { }
+                    console.error('Captured error', e.error || e.message || e);
+                    showAppError(e.error || e.message || e);
+                });
+                window.addEventListener('unhandledrejection', function (ev) {
+                    try { window.__appErrors.push(String(ev.reason)); } catch (err) { }
+                    console.error('UnhandledRejection', ev.reason);
+                    showAppError(ev.reason);
+                });
+                function showAppError(err) {
+                    try {
+                        var id = 'app-error-overlay';
+                        var el = document.getElementById(id);
+                        if (!el) {
+                            el = document.createElement('div'); el.id = id;
+                            el.style.cssText = 'position:fixed;left:12px;right:12px;top:12px;padding:12px;border-radius:8px;background:rgba(255,16,16,0.06);color:#900;font-family:monospace;z-index:99999;max-height:40vh;overflow:auto;backdrop-filter:blur(4px);border:1px solid rgba(150,0,0,0.08)';
+                            document.body.appendChild(el);
+                        }
+                        var msg = (err && err.stack) ? err.stack : String(err);
+                        el.innerText = 'App runtime error:\n' + msg;
+                    } catch (e) { console.error(e); }
+                }
+                // Small ready log so you know index.html loaded
+                console.log('index.html helper initialized');
+            })();
     </script>
 
     <!-- App (transpilado no cliente via Babel standalone) -->
