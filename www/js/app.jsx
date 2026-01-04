@@ -313,7 +313,7 @@ const LoadingScreen = () => (
     </div>
 );
 
-const DailyList = ({ tasks, onToggle, onDelete, darkMode }) => {
+const DailyList = ({ tasks, onToggle, onDelete, onEdit, darkMode }) => {
     const todayStr = new Date().toISOString().split('T')[0];
     const todaysTasks = tasks.sort((a, b) => a.time.localeCompare(b.time)).filter(t => (t.date === todayStr || (!t.date && !t.recurring)) && t.type !== 'note');
 
@@ -339,21 +339,26 @@ const DailyList = ({ tasks, onToggle, onDelete, darkMode }) => {
                     ) : (
                         todaysTasks.map(task => (
                             <div key={task.id} className="flex items-center justify-between p-4 rounded-2xl bg-stone-50 dark:bg-zinc-800/50 hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors">
-                                <div className="flex items-center gap-3 overflow-hidden">
+                                <div className="flex items-center gap-3 overflow-hidden flex-1">
                                     <button
                                         onClick={() => onToggle(task.id)}
                                         className={`size-6 rounded-lg border-2 flex items-center justify-center transition-all ${task.done ? 'bg-brand border-brand' : 'border-stone-300 dark:border-zinc-600'}`}
                                     >
                                         {task.done && <span className="material-symbols-outlined text-sm text-white font-black">check</span>}
                                     </button>
-                                    <div className="min-w-0 text-left">
+                                    <div className="min-w-0 text-left flex-1" onClick={() => onEdit(task)}>
                                         <p className={`text-sm font-bold truncate ${task.done ? 'text-stone-400 line-through' : 'text-stone-700 dark:text-zinc-200'}`}>{task.title}</p>
                                         <p className="text-[10px] font-bold text-stone-400 dark:text-zinc-500 uppercase tracking-wider">{task.time} • {task.cat}</p>
                                     </div>
                                 </div>
-                                <button onClick={() => onDelete(task.id)} className="size-8 rounded-full flex items-center justify-center text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                                    <span className="material-symbols-outlined text-lg">delete</span>
-                                </button>
+                                <div className="flex items-center gap-1">
+                                    <button onClick={() => onEdit(task)} className="size-8 rounded-full flex items-center justify-center text-stone-400 hover:text-brand transition-colors">
+                                        <span className="material-symbols-outlined text-lg">edit</span>
+                                    </button>
+                                    <button onClick={() => onDelete(task.id)} className="size-8 rounded-full flex items-center justify-center text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                        <span className="material-symbols-outlined text-lg">delete</span>
+                                    </button>
+                                </div>
                             </div>
                         ))
                     )}
@@ -504,10 +509,18 @@ const CalendarView = ({ tasks, goals, onAddClick, onDeleteGoal, onToggleTask, on
                                                 <p className="text-[10px] text-stone-300 dark:text-zinc-600 font-bold italic">Nenhuma atividade programada</p>
                                             ) : (
                                                 dayTasks.map((t, tid) => (
-                                                    <div key={tid} className="flex items-center gap-2 bg-white dark:bg-zinc-900 p-2 rounded-xl shadow-sm border border-stone-50 dark:border-zinc-800/50">
-                                                        <div className={`size-1.5 rounded-full ${CATEGORIES[t.cat]?.color === 'red' ? 'bg-red-500' : 'bg-brand'}`}></div>
-                                                        <span className={`text-xs font-bold truncate flex-1 ${t.done ? 'line-through opacity-40' : 'text-stone-700 dark:text-zinc-300'}`}>{t.title}</span>
-                                                        <span className="text-[8px] font-black opacity-30 uppercase">{t.time}</span>
+                                                    <div key={tid} className="group relative flex items-center gap-2 bg-white dark:bg-zinc-900 p-2 rounded-xl shadow-sm border border-stone-50 dark:border-zinc-800/50 cursor-pointer hover:bg-stone-50 transition-all">
+                                                        <div onClick={() => onEditTask(t)} className="flex items-center gap-2 flex-1 min-w-0">
+                                                            <div className={`size-1.5 rounded-full ${CATEGORIES[t.cat]?.color === 'red' ? 'bg-red-500' : 'bg-brand'}`}></div>
+                                                            <span className={`text-xs font-bold truncate flex-1 ${t.done ? 'line-through opacity-40' : 'text-stone-700 dark:text-zinc-300'}`}>{t.title}</span>
+                                                            <span className="text-[8px] font-black opacity-30 uppercase">{t.time}</span>
+                                                        </div>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); onDeleteTask(t.id); }}
+                                                            className="size-6 rounded-full flex items-center justify-center text-stone-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
+                                                        >
+                                                            <span className="material-symbols-outlined text-sm">delete</span>
+                                                        </button>
                                                     </div>
                                                 ))
                                             )}
@@ -541,14 +554,24 @@ const CalendarView = ({ tasks, goals, onAddClick, onDeleteGoal, onToggleTask, on
                                         {tid !== dayTasks.length - 1 && <div className="absolute left-[3px] top-6 bottom-0 w-[2px] bg-stone-100 dark:bg-zinc-800"></div>}
                                         <div className="absolute left-0 top-[7px] size-2 rounded-full bg-brand shadow-[0_0_8px_var(--primary-shadow)]"></div>
 
-                                        <div className="ml-6 bg-stone-50 dark:bg-zinc-800/40 p-5 rounded-[2rem] border border-stone-100 dark:border-zinc-800 group-hover:scale-[1.02] transition-all duration-300">
-                                            <div className="flex justify-between items-start mb-1">
+                                        <div className="ml-6 flex-1 bg-stone-50 dark:bg-zinc-800/40 p-5 rounded-[2rem] border border-stone-100 dark:border-zinc-800 group-hover:scale-[1.02] transition-all duration-300 relative group/card hover:shadow-md">
+                                            <div onClick={() => onEditTask(t)} className="flex justify-between items-start mb-1 cursor-pointer">
                                                 <h4 className={`text-sm font-black ${t.done ? 'line-through opacity-40' : 'text-stone-800 dark:text-zinc-100'}`}>{t.title}</h4>
-                                                <span className={`text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter ${CATEGORIES[t.cat]?.color === 'red' ? 'bg-red-50 text-red-500' : 'bg-brand-light text-brand'}`}>
-                                                    {t.cat}
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter ${CATEGORIES[t.cat]?.color === 'red' ? 'bg-red-50 text-red-500' : 'bg-brand-light text-brand'}`}>
+                                                        {t.cat}
+                                                    </span>
+                                                    <span className="material-symbols-outlined text-sm text-stone-300">edit</span>
+                                                </div>
                                             </div>
-                                            {t.desc && <p className="text-[10px] text-stone-500 dark:text-zinc-400 font-medium leading-relaxed mt-1">{t.desc}</p>}
+                                            {t.desc && <p onClick={() => onEditTask(t)} className="text-[10px] text-stone-500 dark:text-zinc-400 font-medium leading-relaxed mt-1 cursor-pointer">{t.desc}</p>}
+
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onDeleteTask(t.id); }}
+                                                className="absolute -right-2 -top-2 size-8 rounded-full bg-white dark:bg-zinc-800 shadow-lg border border-stone-100 dark:border-zinc-700 flex items-center justify-center text-red-500 opacity-0 group-hover/card:opacity-100 transition-all active:scale-90 z-10"
+                                            >
+                                                <span className="material-symbols-outlined text-sm font-black">delete</span>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -797,7 +820,7 @@ const App = () => {
     const [view, setView] = useState('daily');
     const [showAdd, setShowAdd] = useState(false);
     const [showAddGoal, setShowAddGoal] = useState(false);
-    const [newTask, setNewTask] = useState({ title: '', desc: '', time: '09:00', cat: 'Trabalho', date: new Date().toISOString().split('T')[0], type: 'task' });
+    const [newTask, setNewTask] = useState({ title: '', desc: '', time: '09:00', cat: 'Trabalho', date: new Date().toISOString().split('T')[0], type: 'task', alarm: 'Padrão' });
     const [newGoal, setNewGoal] = useState({
         title: '',
         progress: 0,
@@ -989,13 +1012,49 @@ const App = () => {
     const openDoc = (title, content) => setDocModal({ show: true, title, content });
 
     // CRUD for Tasks (Firestore)
-    const deleteTask = async (id) => {
+    const deleteFutureTasks = async () => {
         if (!user || !db) return;
+        const todayStr = new Date().toISOString().split('T')[0];
         try {
-            await db.collection('users').doc(user.uid).collection('tasks').doc(id).delete();
+            const snap = await db.collection('users').doc(user.uid).collection('tasks')
+                .where('date', '>', todayStr)
+                .get();
+
+            if (snap.empty) {
+                showAppAlert("Info", "Nenhum lembrete futuro encontrado.");
+                return;
+            }
+
+            showAppConfirm(
+                "Confirmar Exclusão",
+                `Deseja apagar ${snap.size} lembretes futuros?\n\nIsso apagará todas as tarefas agendadas para datas após hoje.`,
+                async () => {
+                    const batch = db.batch();
+                    snap.forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                    showAppAlert("Sucesso", `${snap.size} lembretes futuros apagados.`);
+                }
+            );
         } catch (e) {
-            console.error("Error deleting task:", e);
+            console.error("Error deleting future tasks:", e);
+            showAppAlert("Erro", "Erro ao apagar lembretes futuros.");
         }
+    };
+
+    const deleteTask = (id) => {
+        if (!user || !db) return;
+        showAppConfirm(
+            "Excluir Lembrete",
+            "Deseja realmente apagar este lembrete? Esta ação não pode ser desfeita.",
+            async () => {
+                try {
+                    await db.collection('users').doc(user.uid).collection('tasks').doc(id).delete();
+                } catch (e) {
+                    console.error("Error deleting task:", e);
+                    showAppAlert("Erro", "Não foi possível excluir o lembrete.");
+                }
+            }
+        );
     };
 
     const handleAddTask = async () => {
@@ -1025,7 +1084,7 @@ const App = () => {
         }
 
         setShowAdd(false);
-        setNewTask({ title: '', desc: '', time: '09:00', cat: 'Trabalho', date: new Date().toISOString().split('T')[0], type: 'task' });
+        setNewTask({ title: '', desc: '', time: '09:00', cat: 'Trabalho', date: new Date().toISOString().split('T')[0], type: 'task', alarm: 'Padrão' });
     };
 
     const toggleTask = async (id) => {
@@ -1123,34 +1182,42 @@ const App = () => {
             time: '09:00',
             cat: 'Trabalho',
             date: dateStr || new Date().toISOString().split('T')[0],
-            type: type
+            type: type,
+            alarm: 'Padrão'
         });
         setShowAdd(true);
     };
 
     const handleEditTask = (task) => {
-        setNewTask({ ...task }); // clone to avoid direct mutation
+        setNewTask({ alarm: 'Padrão', ...task }); // clone and ensure alarm field exists
         setShowAdd(true);
     };
 
-    const deleteGoal = async (id) => {
+    const deleteGoal = (id) => {
         if (!user || !db) return;
-        try {
-            // 1. Delete associated tasks
-            const tasksSnap = await db.collection('users').doc(user.uid).collection('tasks')
-                .where('goalId', '==', id)
-                .get();
+        showAppConfirm(
+            "Excluir Meta",
+            "Deseja apagar esta meta e todos os lembretes associados a ela?",
+            async () => {
+                try {
+                    // 1. Delete associated tasks
+                    const tasksSnap = await db.collection('users').doc(user.uid).collection('tasks')
+                        .where('goalId', '==', id)
+                        .get();
 
-            const batch = db.batch();
-            tasksSnap.forEach(doc => batch.delete(doc.ref));
+                    const batch = db.batch();
+                    tasksSnap.forEach(doc => batch.delete(doc.ref));
 
-            // 2. Delete the goal
-            batch.delete(db.collection('users').doc(user.uid).collection('goals').doc(id));
+                    // 2. Delete the goal
+                    batch.delete(db.collection('users').doc(user.uid).collection('goals').doc(id));
 
-            await batch.commit();
-        } catch (e) {
-            console.error("Error deleting goal:", e);
-        }
+                    await batch.commit();
+                } catch (e) {
+                    console.error("Error deleting goal:", e);
+                    showAppAlert("Erro", "Não foi possível excluir a meta.");
+                }
+            }
+        );
     };
 
     const handleAddGoal = async () => {
@@ -1186,7 +1253,8 @@ const App = () => {
                             cat: 'Urgente', // High visibility for goals
                             done: false,
                             type: 'task',
-                            goalId: goalId
+                            goalId: goalId,
+                            alarm: 'Padrão'
                         });
                     });
                 }
@@ -1202,10 +1270,21 @@ const App = () => {
     };
 
     // helper to show notification (uses Web Notifications API when available)
-    const [alertModal, setAlertModal] = useState({ show: false, title: '', body: '' });
+    const [alertModal, setAlertModal] = useState({ show: false, title: '', body: '', isConfirm: false, onConfirm: null, onCancel: null });
 
     const showAppAlert = (title, body) => {
-        setAlertModal({ show: true, title, body });
+        setAlertModal({ show: true, title, body, isConfirm: false, onConfirm: null, onCancel: null });
+    };
+
+    const showAppConfirm = (title, body, onConfirm, onCancel) => {
+        setAlertModal({
+            show: true,
+            title,
+            body,
+            isConfirm: true,
+            onConfirm: () => { setAlertModal(prev => ({ ...prev, show: false })); onConfirm?.(); },
+            onCancel: () => { setAlertModal(prev => ({ ...prev, show: false })); onCancel?.(); }
+        });
     };
 
     const showNotification = (task) => {
@@ -1257,7 +1336,7 @@ const App = () => {
         (reminderTimeoutsRef.current || []).forEach(id => clearTimeout(id));
         reminderTimeoutsRef.current = [];
 
-        if (!remindersEnabled) return;
+        // if (!remindersEnabled) return; // Removed to allow individual overrides
 
         const now = new Date();
 
@@ -1272,6 +1351,10 @@ const App = () => {
 
                 tasks.forEach(task => {
                     if (task.done || !task.time || task.type === 'note') return;
+
+                    // Logic: schedule if global is ON OR task is "Sim" override
+                    if (!remindersEnabled && task.alarm !== 'Sim') return;
+
                     const [hh, mm] = (task.time || '00:00').split(':').map(n => parseInt(n, 10));
                     const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh || 0, mm || 0, 0, 0);
                     if (target.getTime() <= now.getTime()) return;
@@ -1289,10 +1372,10 @@ const App = () => {
                         launch: true,
                         lockscreen: true,
                         channel: alarmSound?.channelId || 'reminders',
-                        // On Android 8+, sound is defined by the channel, but passing it here doesn't hurt for older versions
+                        // Sound is handled manually in 'trigger' listener for finer control
                         sound: alarmSound?.uri || undefined,
                         smallIcon: 'res://icon',
-                        data: { taskId: task.id }
+                        data: { taskId: task.id, alarm: task.alarm || 'Padrão' }
                     };
 
                     // Try modern 'trigger' API, fall back to older 'at' param
@@ -1312,6 +1395,10 @@ const App = () => {
         tasks.forEach(task => {
             if (task.done) return; // skip completed
             if (!task.time || task.type === 'note') return; // skip notes and no-time tasks
+
+            // Logic: schedule if global is ON OR task is "Sim" override
+            if (!remindersEnabled && task.alarm !== 'Sim') return;
+
             const [hh, mm] = (task.time || '00:00').split(':').map(n => parseInt(n, 10));
             const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh || 0, mm || 0, 0, 0);
             if (target.getTime() <= now.getTime()) return;
@@ -1381,8 +1468,16 @@ const App = () => {
                 if (window.cordova.plugins && window.cordova.plugins.notification && window.cordova.plugins.notification.local) {
                     window.cordova.plugins.notification.local.on('trigger', (notification) => {
                         console.log('Notification triggered:', notification);
+
+                        // Check alarm override
+                        const alarmPref = notification.data?.alarm || 'Padrão';
+                        let shouldPlay = false;
+                        if (alarmPref === 'Sim') shouldPlay = true;
+                        else if (alarmPref === 'Não') shouldPlay = false;
+                        else shouldPlay = remindersEnabled; // Follow global setting
+
                         // Play alarm sound for 5 seconds when notification arrives
-                        if (alarmSound && alarmSound.uri) {
+                        if (shouldPlay && alarmSound && alarmSound.uri) {
                             if (typeof Media !== 'undefined') {
                                 const m = new Media(alarmSound.uri, () => m.release(), (err) => console.error('Media error:', err));
                                 m.play();
@@ -1441,7 +1536,7 @@ const App = () => {
 
                     <main className="flex-1 px-6 pt-6 pb-32 overflow-y-auto no-scrollbar">
                         {view === 'dashboard' && <Dashboard tasks={tasks} goals={goals} onAddGoal={() => setShowAddGoal(true)} onDeleteGoal={deleteGoal} darkMode={darkMode} />}
-                        {view === 'daily' && <DailyList tasks={tasks} onToggle={toggleTask} onDelete={deleteTask} darkMode={darkMode} />}
+                        {view === 'daily' && <DailyList tasks={tasks} onToggle={toggleTask} onDelete={deleteTask} onEdit={handleEditTask} darkMode={darkMode} />}
                         {view === 'calendar' && (
                             <CalendarView
                                 tasks={tasks}
@@ -1579,6 +1674,18 @@ const App = () => {
                                         </div>
                                         <div className="text-sm text-stone-400 dark:text-zinc-500">Abrir</div>
                                     </div>
+                                    <div className="p-6 flex items-center justify-between hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors cursor-pointer" onClick={deleteFutureTasks}>
+                                        <div className="flex items-center gap-4">
+                                            <div className="size-10 rounded-2xl bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center">
+                                                <span className="material-symbols-outlined filled">delete_sweep</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-black text-red-600 dark:text-red-400">Limpar Lembretes Futuros</span>
+                                                <span className="text-[10px] font-bold text-red-400 dark:text-red-500/60 uppercase">Apaga todas as tarefas após hoje</span>
+                                            </div>
+                                        </div>
+                                        <span className="material-symbols-outlined text-red-300">chevron_right</span>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -1615,12 +1722,12 @@ const App = () => {
                         <div className="fixed inset-0 bg-stone-200/40 dark:bg-black/80 backdrop-blur-sm z-[100] flex flex-col justify-end" onClick={() => setShowAdd(false)}>
                             <div className={`modal-card rounded-t-[4rem] p-10 animate-content shadow-2xl ${newTask.type === 'note' ? 'bg-[#fffdf5] dark:bg-zinc-900 border-t-4 border-yellow-200 dark:border-yellow-900/20' : 'bg-white dark:bg-zinc-900'}`} onClick={e => e.stopPropagation()}>
                                 <div className="flex justify-between items-center mb-10">
-                                    <h3 className="text-3xl font-black text-stone-800 dark:text-zinc-100 tracking-tighter">Nova Bagunça</h3>
+                                    <h3 className="text-3xl font-black text-stone-800 dark:text-zinc-100 tracking-tighter">{newTask.id ? (newTask.type === 'note' ? 'Editar Nota' : 'Editar Tarefa') : 'Nova Bagunça'}</h3>
                                     <button onClick={() => setShowAdd(false)} className="size-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 active:scale-90 transition-all border-none">
                                         <span className="material-symbols-outlined font-black">close</span>
                                     </button>
                                 </div>
-                                <div className="space-y-8">
+                                <div className="space-y-8 no-scrollbar overflow-y-auto max-h-[70vh] pr-2">
                                     <div className="space-y-4">
                                         <div className="space-y-2">
                                             <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">
@@ -1648,53 +1755,73 @@ const App = () => {
                                             </div>
                                         )}
 
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setNewTask({ ...newTask, type: 'task' })}
+                                                className={`flex-1 py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all ${newTask.type === 'task' ? 'bg-brand text-white shadow-lg' : 'bg-stone-100 dark:bg-zinc-800 text-stone-400'}`}
+                                            >
+                                                Tarefa
+                                            </button>
+                                            <button
+                                                onClick={() => setNewTask({ ...newTask, type: 'note' })}
+                                                className={`flex-1 py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all ${newTask.type === 'note' ? 'bg-yellow-400 text-white shadow-lg' : 'bg-stone-100 dark:bg-zinc-800 text-stone-400'}`}
+                                            >
+                                                Nota
+                                            </button>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Data</p>
+                                                <input
+                                                    type="date"
+                                                    value={newTask.date}
+                                                    onChange={e => setNewTask({ ...newTask, date: e.target.value })}
+                                                    className="w-full font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm p-6 focus:ring-4 focus:ring-brand-light dark:text-zinc-100"
+                                                />
+                                            </div>
+                                            {newTask.type !== 'note' && (
+                                                <div className="space-y-2">
+                                                    <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Horário</p>
+                                                    <input
+                                                        type="time"
+                                                        value={newTask.time}
+                                                        onChange={e => setNewTask({ ...newTask, time: e.target.value })}
+                                                        className="w-full font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm p-6 focus:ring-4 focus:ring-brand-light dark:text-zinc-100"
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+
                                         {newTask.type !== 'note' && (
-                                            <>
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        onClick={() => setNewTask({ ...newTask, type: 'task' })}
-                                                        className={`flex-1 py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all ${newTask.type === 'task' ? 'bg-brand text-white shadow-lg' : 'bg-stone-100 dark:bg-zinc-800 text-stone-400'}`}
+                                            <div className="grid grid-cols-1 gap-6">
+                                                <div className="space-y-2">
+                                                    <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Categoria</p>
+                                                    <select
+                                                        value={newTask.cat}
+                                                        onChange={e => setNewTask({ ...newTask, cat: e.target.value })}
+                                                        className="w-full font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm p-6 focus:ring-4 focus:ring-brand-light dark:focus:ring-brand-light/20 appearance-none dark:text-zinc-100"
                                                     >
-                                                        Tarefa
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setNewTask({ ...newTask, type: 'note' })}
-                                                        className={`flex-1 py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all ${newTask.type === 'note' ? 'bg-yellow-400 text-white shadow-lg' : 'bg-stone-100 dark:bg-zinc-800 text-stone-400'}`}
-                                                    >
-                                                        Nota
-                                                    </button>
+                                                        {Object.keys(CATEGORIES).map(c => <option key={c}>{c}</option>)}
+                                                    </select>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-6">
-                                                    <div className="space-y-2">
-                                                        <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Data</p>
-                                                        <input
-                                                            type="date"
-                                                            value={newTask.date}
-                                                            onChange={e => setNewTask({ ...newTask, date: e.target.value })}
-                                                            className="w-full font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm p-6 focus:ring-4 focus:ring-brand-light dark:text-zinc-100"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Horário</p>
-                                                        <input
-                                                            type="time"
-                                                            value={newTask.time}
-                                                            onChange={e => setNewTask({ ...newTask, time: e.target.value })}
-                                                            className="w-full font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm p-6 focus:ring-4 focus:ring-brand-light dark:text-zinc-100"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Categoria</p>
-                                                        <select
-                                                            value={newTask.cat}
-                                                            onChange={e => setNewTask({ ...newTask, cat: e.target.value })}
-                                                            className="w-full font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm p-6 focus:ring-4 focus:ring-brand-light dark:focus:ring-brand-light/20 appearance-none dark:text-zinc-100"
-                                                        >
-                                                            {Object.keys(CATEGORIES).map(c => <option key={c}>{c}</option>)}
-                                                        </select>
+
+                                                <div className="space-y-2">
+                                                    <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Alarme</p>
+                                                    <div className="flex gap-2">
+                                                        {['Sim', 'Não', 'Padrão'].map(opt => (
+                                                            <button
+                                                                key={opt}
+                                                                type="button"
+                                                                onClick={() => setNewTask({ ...newTask, alarm: opt })}
+                                                                className={`flex-1 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${newTask.alarm === opt ? 'bg-brand text-white shadow-lg' : 'bg-stone-50 dark:bg-zinc-800 text-stone-400'}`}
+                                                            >
+                                                                {opt}
+                                                            </button>
+                                                        ))}
                                                     </div>
                                                 </div>
-                                            </>
+                                            </div>
                                         )}
                                     </div>
                                     <button
@@ -1794,21 +1921,35 @@ const App = () => {
 
             {alertModal.show && (
                 <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-stone-200/40 dark:bg-black/60 backdrop-blur-sm animate-content">
-                    <div className="absolute inset-0" onClick={() => setAlertModal({ show: false, title: '', body: '' })}></div>
+                    <div className="absolute inset-0" onClick={() => !alertModal.isConfirm && setAlertModal({ ...alertModal, show: false })}></div>
                     <div className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-[3rem] shadow-2xl border border-stone-100 dark:border-zinc-800 p-8 flex flex-col items-center text-center">
-                        <div className="size-16 rounded-2xl bg-brand-light dark:bg-brand-shadow flex items-center justify-center text-brand mb-6">
+                        <div className={`size-16 rounded-2xl flex items-center justify-center mb-6 ${alertModal.isConfirm ? 'bg-red-50 dark:bg-red-900/20 text-red-500' : 'bg-brand-light dark:bg-brand-shadow text-brand'}`}>
                             <span className="material-symbols-outlined text-3xl filled">
-                                {alertModal.title === 'Erro' ? 'error' : (alertModal.title === 'Aviso' ? 'warning' : 'info')}
+                                {alertModal.isConfirm ? 'help' : (alertModal.title === 'Erro' ? 'error' : (alertModal.title === 'Aviso' ? 'warning' : 'info'))}
                             </span>
                         </div>
                         <h3 className="text-xl font-black text-stone-800 dark:text-zinc-100 tracking-tight mb-2">{alertModal.title}</h3>
                         <p className="text-sm font-medium text-stone-500 dark:text-zinc-400 leading-relaxed mb-8">{alertModal.body}</p>
-                        <button
-                            onClick={() => setAlertModal({ show: false, title: '', body: '' })}
-                            className="w-full py-4 bg-brand text-white rounded-2xl font-black text-sm shadow-lg shadow-brand/20 active:scale-95 transition-all"
-                        >
-                            Entendi
-                        </button>
+
+                        <div className="flex flex-col w-full gap-3">
+                            <button
+                                onClick={() => {
+                                    if (alertModal.isConfirm && alertModal.onConfirm) alertModal.onConfirm();
+                                    else setAlertModal({ ...alertModal, show: false });
+                                }}
+                                className={`w-full py-4 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-all ${alertModal.isConfirm ? 'bg-red-500 text-white shadow-red-500/20' : 'bg-brand text-white shadow-brand/20'}`}
+                            >
+                                {alertModal.isConfirm ? 'Confirmar' : 'Entendi'}
+                            </button>
+                            {alertModal.isConfirm && (
+                                <button
+                                    onClick={() => alertModal.onCancel ? alertModal.onCancel() : setAlertModal({ ...alertModal, show: false })}
+                                    className="w-full py-4 bg-stone-100 dark:bg-zinc-800 text-stone-500 dark:text-zinc-400 rounded-2xl font-black text-sm active:scale-95 transition-all"
+                                >
+                                    Cancelar
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
