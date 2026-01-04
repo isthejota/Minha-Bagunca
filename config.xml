@@ -1,17 +1,33 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="com.cb.minhabagunca" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+<widget id="com.cb.minhabagunca" version="1.0.2" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
     <name>Minha Bagunça</name>
     <description>
-        A sample Apache Cordova application that responds to the deviceready event.
+        Minha Bagunça - Organizador criativo para gerenciar suas tarefas e documentos de forma intuitiva.
     </description>
-    <author email="dev@cordova.apache.org" href="https://cordova.apache.org">
-        Apache Cordova Team
+    <author email="contato@minhabagunca.app" href="https://minhabagunca.app">
+        Minha Bagunça Team
     </author>
     <content src="index.html" />
-    <access origin="*" />
-    <allow-navigation href="*" />
+    <!-- Permitir apenas domínios específicos necessários -->
+    <access origin="https://cdn.tailwindcss.com" />
+    <access origin="https://fonts.googleapis.com" />
+    <access origin="https://fonts.gstatic.com" />
+    <access origin="https://raw.githubusercontent.com" />
+    
+    <!-- Navegação interna e recursos necessários -->
+    <allow-navigation href="about:*" />
+    <allow-navigation href="data:*" />
+    <allow-navigation href="https://cdn.tailwindcss.com/*" />
+    <allow-navigation href="https://fonts.googleapis.com/*" />
+    <allow-navigation href="https://fonts.gstatic.com/*" />
+    
+    <!-- Permitir abrir links externos no navegador do sistema -->
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
+    <allow-intent href="tel:*" />
+    <allow-intent href="sms:*" />
+    <allow-intent href="mailto:*" />
+    <allow-intent href="geo:*" />
     <platform name="android">
     <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/splash/splashscreen.xml" />
     <preference name="AndroidWindowSplashScreenBackground" value="#ffffff" />
@@ -19,6 +35,7 @@
     <resource-file src="res/values/themes.xml" target="app/src/main/res/values/themes.xml" />
     <resource-file src="res/values-night/themes.xml" target="app/src/main/res/values-night/themes.xml" />
     <resource-file src="res/values/colors-night.xml" target="app/src/main/res/values-night/colors.xml" />
+    <resource-file src="google-services.json" target="app/google-services.json" />
         <config-file target="AndroidManifest.xml" parent="/*">
             <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
             <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />

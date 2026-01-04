@@ -1,3 +1,6 @@
+// Firebase Compat imports are handled in index.html via script tags
+// We use the global 'firebase' object directly
+
 console.log('app.jsx loading');
 
 // Create safe placeholders for createRoot/render which may come from a UMD ReactDOM
@@ -64,11 +67,11 @@ const CATEGORIES = {
 
 const PRIVACY_POLICY = `Política de Privacidade\n\nEste aplicativo armazena localmente no seu dispositivo os dados de tarefas, perfil e configurações. As imagens de perfil selecionadas são guardadas localmente como data URLs. Não enviamos seus dados para servidores externos.\n\nVocê pode limpar seus dados a qualquer momento removendo tarefas ou limpando os dados do aplicativo nas configurações do dispositivo.\n\nContato: suporte@seudominio.com`;
 
-const TERMS_OF_USE = `Termos de Uso\n\nAo utilizar este aplicativo, você concorda em usar as funcionalidades apenas para fins pessoais e não comerciais. O aplicativo é fornecido no estado em que se encontra, sem garantias expressas ou implícitas. Não nos responsabilizamos por perdas de dados; faça backups regularmente.\n\nVersão: 1.0`;
+const TERMS_OF_USE = `Termos de Uso\n\nAo utilizar este aplicativo, você concorda em usar as funcionalidades apenas para fins pessoais e não comerciais. O aplicativo é fornecido no estado em que se encontra, sem garantias expressas ou implícitas. Não nos responsabilizamos por perdas de dados; faça backups regularmente.\n\nVersão: 1.0.2`;
 
-const Dashboard = ({ tasks, darkMode }) => {
+const Dashboard = ({ tasks, goals, onAddGoal, onDeleteGoal, darkMode }) => {
     const todayStr = new Date().toISOString().split('T')[0];
-    const todaysTasks = tasks.filter(t => t.date === todayStr || (!t.date && !t.recurring));
+    const todaysTasks = tasks.filter(t => (t.date === todayStr || (!t.date && !t.recurring)) && t.type !== 'note');
     const completed = todaysTasks.filter(t => t.done).length;
     const progress = todaysTasks.length > 0 ? Math.round((completed / todaysTasks.length) * 100) : 0;
 
@@ -82,7 +85,7 @@ const Dashboard = ({ tasks, darkMode }) => {
         const monday = new Date(now.setDate(diff));
 
         tasks.forEach(task => {
-            if (!task.date) return;
+            if (!task.date || task.type === 'note') return;
             const taskDate = new Date(task.date + 'T00:00:00');
             const weekDiff = Math.floor((taskDate - monday) / (1000 * 60 * 60 * 24));
 
@@ -95,7 +98,7 @@ const Dashboard = ({ tasks, darkMode }) => {
     }, [tasks]);
 
     return (
-        <div className="space-y-6 animate-content">
+        <div className="space-y-6 animate-content pb-10">
             <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 shadow-sm border border-stone-100 dark:border-zinc-800 relative rotate-1 overflow-hidden">
                 <div className="tape"></div>
                 <div className="flex flex-col items-center text-center relative z-20">
@@ -126,6 +129,43 @@ const Dashboard = ({ tasks, darkMode }) => {
                     <div className="mt-3 px-3 py-1 bg-stone-50 dark:bg-zinc-800 rounded-full">
                         <span className="text-[10px] font-bold text-stone-500 dark:text-zinc-400 uppercase tracking-tight">Organizado</span>
                     </div>
+                </div>
+            </div>
+
+            {/* Minhas Metas */}
+            <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 shadow-sm border border-stone-100 dark:border-zinc-800">
+                <div className="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 className="text-xl font-black text-stone-800 dark:text-zinc-100 tracking-tight">Minhas Metas</h3>
+                        <p className="text-[10px] text-stone-400 font-bold uppercase tracking-widest mt-1">Conquistas do Mês</p>
+                    </div>
+                    <button onClick={onAddGoal} className="size-10 rounded-2xl bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/20 active:scale-90 transition-all">
+                        <span className="material-symbols-outlined">add</span>
+                    </button>
+                </div>
+                <div className="space-y-4">
+                    {goals.length === 0 ? (
+                        <div className="text-center py-6 opacity-40">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Nenhuma meta definida</p>
+                        </div>
+                    ) : (
+                        goals.map(goal => (
+                            <div key={goal.id} className="bg-stone-50 dark:bg-zinc-800/40 p-5 rounded-[2rem] border border-stone-100 dark:border-zinc-800">
+                                <div className="flex justify-between mb-2">
+                                    <p className="text-xs font-black text-stone-800 dark:text-zinc-100">{goal.title}</p>
+                                    <div className="flex items-center gap-3">
+                                        <p className="text-[10px] font-black text-brand">{goal.progress}%</p>
+                                        <button onClick={() => onDeleteGoal(goal.id)} className="text-stone-300 hover:text-red-500 transition-colors active:scale-90">
+                                            <span className="material-symbols-outlined text-sm">delete</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="w-full bg-stone-200 dark:bg-zinc-700 h-1.5 rounded-full overflow-hidden">
+                                    <div className="bg-brand h-full rounded-full shadow-sm" style={{ width: `${goal.progress}%` }}></div>
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
 
@@ -170,9 +210,162 @@ const Dashboard = ({ tasks, darkMode }) => {
     );
 };
 
-const CalendarView = ({ tasks, goals, onAddClick, onDeleteGoal, onToggleTask, onDeleteTask, darkMode }) => {
+const Login = ({ onGoogleLogin, onEmailLogin, onEmailRegister }) => {
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [name, setName] = useState('');
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (isRegistering) {
+            onEmailRegister(name, email, password);
+        } else {
+            onEmailLogin(email, password);
+        }
+    };
+
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-8 text-center bg-white dark:bg-zinc-900 animate-content overflow-y-auto">
+            <div className="size-24 bg-brand rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-brand/30 mb-6 rotate-3 flex-shrink-0">
+                <span className="material-symbols-outlined text-5xl text-white filled">draw</span>
+            </div>
+            <h1 className="text-3xl font-black text-stone-800 dark:text-zinc-100 tracking-tighter mb-1">Minha Bagunça</h1>
+            <p className="text-stone-400 font-bold uppercase tracking-widest text-[10px] mb-8">Organize sua criatividade</p>
+
+            <form onSubmit={handleSubmit} className="w-full max-w-xs space-y-4">
+                {isRegistering && (
+                    <div className="space-y-1 text-left">
+                        <p className="text-[10px] font-black text-stone-300 uppercase tracking-widest ml-4">Nome Completo</p>
+                        <input
+                            type="text"
+                            placeholder="Seu Nome"
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            required
+                            className="w-full py-4 px-6 bg-stone-50 dark:bg-zinc-800 rounded-[1.5rem] border-none shadow-sm focus:ring-2 focus:ring-brand text-sm dark:text-white"
+                        />
+                    </div>
+                )}
+                <div className="space-y-1 text-left">
+                    <p className="text-[10px] font-black text-stone-300 uppercase tracking-widest ml-4">E-mail</p>
+                    <input
+                        type="email"
+                        placeholder="seu@email.com"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        required
+                        className="w-full py-4 px-6 bg-stone-50 dark:bg-zinc-800 rounded-[1.5rem] border-none shadow-sm focus:ring-2 focus:ring-brand text-sm dark:text-white"
+                    />
+                </div>
+                <div className="space-y-1 text-left">
+                    <p className="text-[10px] font-black text-stone-300 uppercase tracking-widest ml-4">Senha</p>
+                    <input
+                        type="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        required
+                        className="w-full py-4 px-6 bg-stone-50 dark:bg-zinc-800 rounded-[1.5rem] border-none shadow-sm focus:ring-2 focus:ring-brand text-sm dark:text-white"
+                    />
+                </div>
+
+                <button
+                    type="submit"
+                    className="w-full py-4 bg-brand text-white rounded-[1.5rem] font-black text-base shadow-lg active:scale-95 transition-all hover:brightness-110"
+                >
+                    {isRegistering ? 'Criar Conta' : 'Entrar'}
+                </button>
+            </form>
+
+            <div className="w-full max-w-xs flex items-center gap-4 my-6">
+                <div className="flex-1 h-px bg-stone-100 dark:bg-zinc-800"></div>
+                <span className="text-[10px] font-black text-stone-300 uppercase">ou</span>
+                <div className="flex-1 h-px bg-stone-100 dark:bg-zinc-800"></div>
+            </div>
+
+            <button
+                type="button"
+                onClick={onGoogleLogin}
+                className="w-full max-w-xs py-4 bg-white dark:bg-zinc-800 text-stone-600 dark:text-zinc-300 rounded-[1.5rem] font-black text-base shadow-md border border-stone-100 dark:border-zinc-700 active:scale-95 transition-all flex items-center justify-center gap-3 hover:bg-stone-50 dark:hover:bg-zinc-700"
+            >
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/pwa_list/google.svg" className="size-5" alt="Google" />
+                Google
+            </button>
+
+            <button
+                type="button"
+                onClick={() => setIsRegistering(!isRegistering)}
+                className="mt-8 text-xs font-bold text-brand uppercase tracking-widest hover:underline"
+            >
+                {isRegistering ? 'Já tem conta? Faça Login' : 'Não tem conta? Cadastre-se'}
+            </button>
+
+            <p className="mt-8 text-[9px] text-stone-300 dark:text-zinc-600 font-black uppercase tracking-[0.2em]">Sincronize sua bagunça na nuvem</p>
+        </div>
+    );
+};
+
+const LoadingScreen = () => (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-zinc-900">
+        <div className="size-16 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-stone-400 font-black uppercase tracking-widest text-[10px]">Arrumando a bagunça...</p>
+    </div>
+);
+
+const DailyList = ({ tasks, onToggle, onDelete, darkMode }) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todaysTasks = tasks.sort((a, b) => a.time.localeCompare(b.time)).filter(t => (t.date === todayStr || (!t.date && !t.recurring)) && t.type !== 'note');
+
+    return (
+        <div className="space-y-6 animate-content">
+            <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 shadow-sm border border-stone-100 dark:border-zinc-800">
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="size-12 rounded-2xl bg-brand-light dark:bg-brand-shadow flex items-center justify-center text-brand">
+                        <span className="material-symbols-outlined text-2xl filled">checklist</span>
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black text-stone-800 dark:text-zinc-100 tracking-tight">Lista Diária</h2>
+                        <p className="text-xs text-stone-400 dark:text-zinc-500 font-bold uppercase tracking-widest">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                    </div>
+                </div>
+
+                <div className="space-y-3">
+                    {todaysTasks.length === 0 ? (
+                        <div className="text-center py-10 opacity-50">
+                            <span className="material-symbols-outlined text-4xl mb-2">thumb_up</span>
+                            <p className="text-sm font-bold">Tudo limpo por aqui!</p>
+                        </div>
+                    ) : (
+                        todaysTasks.map(task => (
+                            <div key={task.id} className="flex items-center justify-between p-4 rounded-2xl bg-stone-50 dark:bg-zinc-800/50 hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <button
+                                        onClick={() => onToggle(task.id)}
+                                        className={`size-6 rounded-lg border-2 flex items-center justify-center transition-all ${task.done ? 'bg-brand border-brand' : 'border-stone-300 dark:border-zinc-600'}`}
+                                    >
+                                        {task.done && <span className="material-symbols-outlined text-sm text-white font-black">check</span>}
+                                    </button>
+                                    <div className="min-w-0 text-left">
+                                        <p className={`text-sm font-bold truncate ${task.done ? 'text-stone-400 line-through' : 'text-stone-700 dark:text-zinc-200'}`}>{task.title}</p>
+                                        <p className="text-[10px] font-bold text-stone-400 dark:text-zinc-500 uppercase tracking-wider">{task.time} • {task.cat}</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => onDelete(task.id)} className="size-8 rounded-full flex items-center justify-center text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                    <span className="material-symbols-outlined text-lg">delete</span>
+                                </button>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const CalendarView = ({ tasks, goals, onAddClick, onDeleteGoal, onToggleTask, onDeleteTask, darkMode, onOpenAdd, onEditTask }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [viewMode, setViewMode] = useState('Mês');
+    const [viewMode, setViewMode] = useState('Agenda');
 
     const daysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
     const firstDayOfMonth = (month, year) => {
@@ -187,7 +380,7 @@ const CalendarView = ({ tasks, goals, onAddClick, onDeleteGoal, onToggleTask, on
     const handlePrev = () => {
         const d = new Date(currentDate);
         if (viewMode === 'Dia') d.setDate(d.getDate() - 1);
-        else if (viewMode === 'Semana') d.setDate(d.getDate() - 7);
+        else if (viewMode === 'Semana' || viewMode === 'Agenda') d.setDate(d.getDate() - 7);
         else d.setMonth(d.getMonth() - 1);
         setCurrentDate(d);
     };
@@ -195,7 +388,7 @@ const CalendarView = ({ tasks, goals, onAddClick, onDeleteGoal, onToggleTask, on
     const handleNext = () => {
         const d = new Date(currentDate);
         if (viewMode === 'Dia') d.setDate(d.getDate() + 1);
-        else if (viewMode === 'Semana') d.setDate(d.getDate() + 7);
+        else if (viewMode === 'Semana' || viewMode === 'Agenda') d.setDate(d.getDate() + 7);
         else d.setMonth(d.getMonth() + 1);
         setCurrentDate(d);
     };
@@ -211,6 +404,11 @@ const CalendarView = ({ tasks, goals, onAddClick, onDeleteGoal, onToggleTask, on
             : d;
         return tasks.filter(t => t.date === dateStr);
     };
+
+    // Fix ReferenceError: todaysTasks is not defined
+    // We reuse the logic from Dashboard/DailyList to identify today's tasks
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todaysTasks = tasks.filter(t => (t.date === todayStr || (!t.date && !t.recurring)) && t.type !== 'note');
 
     return (
         <div className="space-y-6 animate-content pb-10">
@@ -232,7 +430,7 @@ const CalendarView = ({ tasks, goals, onAddClick, onDeleteGoal, onToggleTask, on
                 </div>
 
                 <div className="flex p-1 bg-stone-50 dark:bg-zinc-800/50 rounded-2xl mb-6">
-                    {['Realizar', 'Mês', 'Semana', 'Dia'].map(mode => (
+                    {['Agenda', 'Mês', 'Semana', 'Dia'].map(mode => (
                         <button
                             key={mode}
                             onClick={() => setViewMode(mode)}
@@ -288,7 +486,7 @@ const CalendarView = ({ tasks, goals, onAddClick, onDeleteGoal, onToggleTask, on
                                 const d = new Date(monday);
                                 d.setDate(monday.getDate() + i);
                                 const dStr = d.toISOString().split('T')[0];
-                                const dayTasks = tasks.filter(t => t.date === dStr);
+                                const dayTasks = tasks.filter(t => t.date === dStr && t.type !== 'note');
                                 const dayNames = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
                                 const isDToday = d.toDateString() === new Date().toDateString();
 
@@ -325,7 +523,7 @@ const CalendarView = ({ tasks, goals, onAddClick, onDeleteGoal, onToggleTask, on
                     <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 no-scrollbar py-4">
                         {(() => {
                             const dStr = currentDate.toISOString().split('T')[0];
-                            const dayTasks = tasks.filter(t => t.date === dStr).sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
+                            const dayTasks = tasks.filter(t => t.date === dStr && t.type !== 'note').sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
 
                             if (dayTasks.length === 0) return (
                                 <div className="py-12 text-center opacity-40">
@@ -359,207 +557,256 @@ const CalendarView = ({ tasks, goals, onAddClick, onDeleteGoal, onToggleTask, on
                     </div>
                 )}
 
-                {viewMode === 'Realizar' && (
-                    <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 no-scrollbar py-4 px-1">
+                {viewMode === 'Agenda' && (
+                    <div className="max-h-[540px] overflow-y-auto pr-2 no-scrollbar">
                         {(() => {
-                            const monthTasks = tasks.filter(t => {
-                                const [y, m] = t.date.split('-');
-                                return parseInt(y) === year && parseInt(m) === month + 1 && !t.done;
-                            }).sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+                            // Calculate start of current week
+                            const monday = new Date(currentDate);
+                            const day = monday.getDay(); // 0=Sun, 1=Mon
+                            const diff = monday.getDate() - day + (day === 0 ? -6 : 1); // Adjust to Monday
+                            monday.setDate(diff);
 
-                            if (monthTasks.length === 0) return (
-                                <div className="py-20 text-center flex flex-col items-center justify-center gap-4">
-                                    <div className="size-20 rounded-full bg-stone-50 dark:bg-zinc-800 flex items-center justify-center text-brand">
-                                        <span className="material-symbols-outlined text-5xl filled">check_circle</span>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-black text-stone-800 dark:text-zinc-100 uppercase tracking-tighter">Tudo em dia!</p>
-                                        <p className="text-[10px] font-bold text-stone-400 dark:text-zinc-500 uppercase tracking-widest">Nenhuma pendência para este mês</p>
-                                    </div>
-                                </div>
-                            );
+                            const weekDays = Array.from({ length: 7 }, (_, i) => {
+                                const d = new Date(monday);
+                                d.setDate(monday.getDate() + i);
+                                return d;
+                            });
 
                             return (
-                                <>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h4 className="text-[10px] font-black text-stone-400 dark:text-zinc-600 uppercase tracking-widest">Foco de Execução</h4>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-black text-stone-400 uppercase">{monthTasks.length} restam</span>
-                                            <div className="h-1 w-8 bg-stone-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                                                <div className="h-full bg-brand animate-pulse" style={{ width: '40%' }}></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {monthTasks.map((t, tid) => (
-                                            <div key={t.id} className="flex items-center gap-4 bg-stone-50 dark:bg-zinc-800/40 p-4 rounded-3xl border border-stone-100 dark:border-zinc-800 group hover:border-brand/30 transition-all active:scale-[0.98]">
-                                                <button
-                                                    onClick={() => onToggleTask(t.id)}
-                                                    className={`size-7 rounded-xl border-2 flex items-center justify-center transition-all ${t.done ? 'bg-brand border-brand rotate-12' : 'border-stone-200 dark:border-zinc-700 hover:border-brand'}`}
-                                                >
-                                                    {t.done && <span className="material-symbols-outlined text-white text-sm font-black">check</span>}
-                                                </button>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 mb-0.5">
-                                                        <span className="text-[9px] font-black text-brand uppercase tracking-tighter">
-                                                            {new Date(t.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                                                        </span>
-                                                        <span className="text-[8px] text-stone-300 dark:text-zinc-700">•</span>
-                                                        <span className="text-[9px] font-bold text-stone-400 dark:text-zinc-500">{t.time}</span>
+                                <div className="flex flex-col gap-4 pb-10">
+                                    {weekDays.map((date, i) => {
+                                        const dateStr = date.toISOString().split('T')[0];
+                                        // Show ONLY notes
+                                        const dayNotes = tasks.filter(t => t.date === dateStr && t.type === 'note');
+                                        const isDToday = date.toDateString() === new Date().toDateString();
+                                        const dayNames = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+
+                                        return (
+                                            <div
+                                                key={dateStr}
+                                                className={`p-4 rounded-[2rem] border transition-all ${isDToday ? 'bg-white dark:bg-zinc-900 border-brand/20 shadow-sm' : 'bg-stone-50/50 dark:bg-zinc-800/20 border-transparent hover:border-stone-200 dark:hover:border-zinc-700'}`}
+                                            >
+                                                {/* Header Row */}
+                                                <div className="flex items-center justify-between mb-3 px-1">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`text-xl font-black ${isDToday ? 'text-brand' : 'text-stone-300 dark:text-zinc-600'}`}>{String(date.getDate()).padStart(2, '0')}</div>
+                                                        <div className={`text-[10px] font-bold uppercase tracking-widest ${isDToday ? 'text-stone-800 dark:text-zinc-100' : 'text-stone-400 dark:text-zinc-500'}`}>{dayNames[i]}</div>
                                                     </div>
-                                                    <h5 className="text-sm font-black text-stone-700 dark:text-zinc-300 truncate">{t.title}</h5>
+                                                    <button
+                                                        onClick={() => onOpenAdd && onOpenAdd(dateStr, 'note')}
+                                                        className="size-8 rounded-full bg-white dark:bg-zinc-800 border border-stone-100 dark:border-zinc-700 flex items-center justify-center text-stone-400 hover:text-brand hover:border-brand transition-all shadow-sm active:scale-90"
+                                                    >
+                                                        <span className="material-symbols-outlined text-sm font-black">add</span>
+                                                    </button>
                                                 </div>
-                                                <span className={`text-[8px] px-2 py-1 rounded-full font-black uppercase tracking-tighter ${CATEGORIES[t.cat]?.color === 'red' ? 'bg-red-50 text-red-500' : 'bg-brand/10 text-brand'}`}>
-                                                    {t.cat}
-                                                </span>
+
+                                                {/* Notes List */}
+                                                <div className="space-y-2">
+                                                    {dayNotes.length === 0 ? (
+                                                        <div className="px-2 py-4 border-l-2 border-stone-100 dark:border-zinc-800 border-dashed ml-2">
+                                                            <span className="text-[10px] text-stone-300 dark:text-zinc-700 italic font-medium pl-2">Nada anotado...</span>
+                                                        </div>
+                                                    ) : (
+                                                        dayNotes.map(note => (
+                                                            <div
+                                                                key={note.id}
+                                                                onClick={(e) => { e.stopPropagation(); onEditTask && onEditTask(note); }}
+                                                                className="relative group bg-[#fffdf5] dark:bg-yellow-900/5 p-4 rounded-2xl border border-yellow-100 dark:border-yellow-900/20 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                                                            >
+                                                                <div className="flex items-start justify-between gap-4 mb-2">
+                                                                    <div className="space-y-1 pr-8">
+                                                                        <h5 className="text-sm font-bold text-stone-800 dark:text-zinc-200 leading-tight">{note.title}</h5>
+                                                                        {note.desc && (
+                                                                            <p
+                                                                                className="text-xs text-stone-500 dark:text-zinc-400 leading-relaxed font-medium overflow-hidden text-ellipsis break-all"
+                                                                                style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+                                                                            >
+                                                                                {note.desc}
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="flex justify-between items-center mt-2 border-t border-yellow-100 dark:border-yellow-900/20 pt-2">
+                                                                    <span className="text-[8px] font-black text-yellow-600/40 uppercase tracking-widest bg-yellow-50 dark:bg-yellow-900/30 px-2 py-1 rounded-md">Nota</span>
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); onDeleteTask(note.id); }}
+                                                                        className="p-1.5 rounded-full bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 transition-colors"
+                                                                        title="Excluir nota"
+                                                                    >
+                                                                        <span className="material-symbols-outlined text-[14px] font-black">delete</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                </>
+                                        );
+                                    })}
+                                </div>
                             );
                         })()}
                     </div>
                 )}
             </div>
-
-            {/* Metas Mensais */}
-            <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 shadow-sm border border-stone-100 dark:border-zinc-800 relative overflow-hidden">
-                <div className="tape"></div>
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-500 mb-6">Metas Mensais</h4>
-                <div className="space-y-4">
-                    {goals.length === 0 ? (
-                        <div className="text-center py-6 opacity-40">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Nenhuma meta ainda</p>
-                        </div>
-                    ) : (
-                        goals.map((g, idx) => (
-                            <div key={idx} className="flex items-center gap-4 bg-stone-50 dark:bg-zinc-800/50 p-5 rounded-[2rem] border border-stone-100 dark:border-zinc-800 group relative">
-                                <div className="size-10 rounded-2xl bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/20">
-                                    <span className="material-symbols-outlined text-xl">emoji_events</span>
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-xs font-black text-stone-800 dark:text-zinc-100">{g.title}</p>
-                                    <div className="w-full bg-stone-200 dark:bg-zinc-700 h-1.5 rounded-full mt-2 overflow-hidden">
-                                        <div className="bg-brand h-full rounded-full shadow-sm" style={{ width: `${g.progress}%`, boxShadow: '0 0 10px var(--primary-shadow)' }}></div>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => onDeleteGoal(idx)}
-                                    className="size-8 rounded-full bg-red-100 text-red-500 hidden group-hover:flex items-center justify-center active:scale-95 transition-all"
-                                >
-                                    <span className="material-symbols-outlined text-sm font-black">delete</span>
-                                </button>
-                            </div>
-                        ))
-                    )}
-                    <button
-                        onClick={onAddClick}
-                        className="w-full py-5 border-4 border-dashed border-stone-50 dark:border-zinc-800/50 rounded-[2rem] flex items-center justify-center gap-3 group active:scale-95 transition-all"
-                    >
-                        <div className="size-8 bg-stone-50 dark:bg-zinc-800 rounded-xl flex items-center justify-center group-hover:bg-brand/10 transition-colors">
-                            <span className="material-symbols-outlined text-stone-500 group-hover:text-brand font-black">add</span>
-                        </div>
-                        <span className="text-xs font-black text-stone-500 group-hover:text-brand transition-colors">Adicionar Metas</span>
-                    </button>
-                </div>
-            </div>
         </div>
     );
 };
 
-const DailyList = ({ tasks, onToggle, onDelete, darkMode }) => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const todaysTasks = tasks.filter(t => (t.date === todayStr || !t.date));
+// Version Control
+const APP_VERSION = '1.0.2'; // Must match config.xml version
+const VERSION_CONTROL_URL = 'https://raw.githubusercontent.com/isthejota/Minha-Bagunca/main/version-control.json';
 
-    return (
-        <div className="space-y-4 animate-content pb-10">
-            <div className="mb-8 flex justify-between items-end">
-                <div>
-                    <h1 className="text-4xl font-black text-stone-800 tracking-tighter">Hoje</h1>
-                    <p className="text-stone-400 text-xs font-bold uppercase tracking-[0.2em] mt-1">Bagunça Planejada</p>
-                </div>
-                <div className="text-right">
-                    <p className="text-2xl font-black text-brand leading-none">{todaysTasks.filter(t => t.done).length}/{todaysTasks.length}</p>
-                    <p className="text-[10px] font-bold text-stone-300 dark:text-zinc-600 uppercase">Feito</p>
-                </div>
-            </div>
-
-            <div className="relative pl-4 space-y-6">
-                <div className="absolute left-[1.15rem] top-2 bottom-2 w-0.5 bg-stone-100 dark:bg-zinc-800 rounded-full"></div>
-                {todaysTasks.length === 0 ? (
-                    <div className="text-center py-20 flex flex-col items-center">
-                        <div className="size-20 bg-stone-50 rounded-full flex items-center justify-center text-stone-200 mb-4 rotate-12">
-                            <span className="material-symbols-outlined text-5xl">draw</span>
-                        </div>
-                        <p className="text-stone-400 font-bold">Nenhuma bagunça agendada!</p>
-                        <p className="text-[10px] text-stone-200 uppercase font-black tracking-widest mt-1">Adicione algo no botão +</p>
-                    </div>
-                ) : (
-                    todaysTasks.sort((a, b) => a.time.localeCompare(b.time)).map((task, idx) => {
-                        const config = CATEGORIES[task.cat] || CATEGORIES['Trabalho'];
-                        return (
-                            <div key={task.id} className="flex gap-6 items-start group">
-                                <div className="z-10 bg-[#f8f7f6] dark:bg-[#09090b] py-1">
-                                    <div className={`size-3.5 rounded-full border-2 transition-all duration-500 ${task.done ? 'bg-brand border-brand scale-125' : 'bg-white dark:bg-zinc-900 border-stone-200 dark:border-zinc-700'}`}></div>
-                                </div>
-                                <div
-                                    className={`flex-1 p-5 bg-white rounded-[2rem] border cursor-pointer paper-card shadow-sm ${idx % 2 === 0 ? 'rotate-1' : '-rotate-1'} ${task.done ? 'opacity-40 grayscale border-transparent' : 'border-stone-100 dark:border-zinc-800'}`}
-                                    onClick={() => onToggle(task.id)}
-                                >
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className="text-[10px] font-black text-stone-800 dark:text-zinc-300 bg-stone-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full uppercase tracking-tighter">{task.time}</span>
-                                                <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-tight ${config.color === 'brand' ? 'text-brand dark:text-brand bg-brand-light dark:bg-brand-shadow' : `text-${config.color}-500 bg-${config.color}-50 dark:bg-${config.color}-900/20`}`}>
-                                                    {task.cat}
-                                                </span>
-                                            </div>
-                                            <h4 className={`text-base font-black leading-tight ${task.done ? 'line-through decoration-brand/50' : 'text-stone-800'}`}>{task.title}</h4>
-                                            {task.desc && <p className="text-xs text-stone-400 mt-2 font-medium">{task.desc}</p>}
-                                        </div>
-                                        <div className="flex flex-col items-end gap-2">
-                                            <div className={`size-7 rounded-xl border-2 flex items-center justify-center transition-all ${task.done ? 'bg-brand border-brand rotate-12' : 'border-stone-100 rotate-0'}`}>
-                                                {task.done && <span className="material-symbols-outlined text-white text-base font-black">check</span>}
-                                            </div>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
-                                                className="size-9 flex items-center justify-center bg-red-500 text-white rounded-2xl active:scale-75 transition-all shadow-lg shadow-red-200"
-                                            >
-                                                <span className="material-symbols-outlined text-xl font-black">delete</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })
-                )}
-            </div>
-        </div>
-    );
+const firebaseConfig = {
+    apiKey: "AIzaSyDk9GDK_5ixlYhHXkjOm_1m8fkkvuyQ5qQ",
+    authDomain: "minha-bagunca.firebaseapp.com",
+    projectId: "minha-bagunca",
+    storageBucket: "minha-bagunca.firebasestorage.app",
+    messagingSenderId: "881660558108",
+    appId: "1:881660558108:android:dfa7583e63757f53bf98d9"
 };
+
+// Initialize Firebase (Compat)
+if (window.firebase && !window.firebase.apps.length) {
+    window.firebase.initializeApp(firebaseConfig);
+}
+const db = window.firebase ? window.firebase.firestore() : null;
+const auth = window.firebase ? window.firebase.auth() : null;
+const googleProvider = window.firebase ? new window.firebase.auth.GoogleAuthProvider() : null;
 
 const App = () => {
-    // Version Control
-    const APP_VERSION = '1.0.0'; // Must match config.xml version
-    const VERSION_CONTROL_URL = 'https://raw.githubusercontent.com/isthejota/Minha-Bagunca/main/version-control.json';
 
-    const [tasks, setTasks] = useState(() => {
-        const saved = localStorage.getItem('minha-bagunca-tasks');
-        return saved ? JSON.parse(saved) : DEFAULT_TASKS;
-    });
+    const [user, setUser] = useState(null);
+    const [authLoading, setAuthLoading] = useState(true);
+
+    // Authentication Listener
+    useEffect(() => {
+        if (!auth) {
+            setAuthLoading(false);
+            return;
+        }
+        const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+            setUser(currentUser);
+            if (currentUser) {
+                // Determine profile from Google
+                setProfile({
+                    name: currentUser.displayName || 'Mente Criativa',
+                    photo: currentUser.photoURL || 'https://picsum.photos/seed/artist/200'
+                });
+            }
+            setAuthLoading(false);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    const handleGoogleLogin = async () => {
+        if (!auth) {
+            showAppAlert("Erro", "Firebase Auth não inicializado.");
+            return;
+        }
+
+        // 1. Try Native Cordova Login first
+        if (typeof window !== 'undefined' && window.plugins && window.plugins.googleplus) {
+            console.log("Iniciando Login Nativo (Google Plus Plugin)...");
+            window.plugins.googleplus.login(
+                {
+                    'webClientId': '881660558108-nv7ue2a5r4rmrmqm16uq4ovan1sqemcu.apps.googleusercontent.com',
+                    'offline': false
+                },
+                async (obj) => {
+                    console.log("Native OAuth Success, syncing with Firebase...", obj);
+                    try {
+                        // Create Firebase credential from native result
+                        const credential = window.firebase.auth.GoogleAuthProvider.credential(obj.idToken);
+                        await auth.signInWithCredential(credential);
+                    } catch (err) {
+                        console.error("Firebase sync error:", err);
+                        showAppAlert("Erro", "Erro ao sincronizar com Firebase: " + err.message);
+                    }
+                },
+                (msg) => {
+                    console.warn("Native Login cancel/error:", msg);
+                    // If it was just a manual cancel, don't necessarily error out, 
+                    // or try fallback if it makes sense. Not usually.
+                    if (msg !== 'cancel') showAppAlert("Erro", "Erro no Login Nativo: " + msg);
+                }
+            );
+            return;
+        }
+
+        // 2. Fallback to Web/Firebase Popup (for Browser testing or if plugin missing)
+        try {
+            if (!googleProvider) throw new Error("Google Provider not ready");
+            console.log("Iniciando signInWithPopup (Web Fallback)...");
+            await auth.signInWithPopup(googleProvider);
+        } catch (e) {
+            console.error("Erro detalhado de Login Google (Web):", e);
+            let msg = e.message;
+            if (e.code === 'auth/internal-error') {
+                msg = "Erro Interno. Verifique o console. No Android, certifique-se que o plugin está instalado.";
+            }
+            showAppAlert("Erro", "Erro ao entrar (" + (e.code || 'erro') + "): " + msg);
+        }
+    };
+
+    const handleEmailLogin = async (email, password) => {
+        if (!auth) return;
+        try {
+            await auth.signInWithEmailAndPassword(email, password);
+        } catch (e) {
+            console.error("Login error:", e);
+            if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
+                showAppAlert("Acesso Negado", "E-mail ou senha incorretos. Se ainda não tem uma conta, por favor, realize o seu cadastro primeiro.");
+            } else {
+                showAppAlert("Erro", "Erro ao entrar: " + e.message);
+            }
+        }
+    };
+
+    const handleEmailRegister = async (name, email, password) => {
+        if (!auth) return;
+        try {
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            if (userCredential.user) {
+                await userCredential.user.updateProfile({ displayName: name });
+                setProfile({ name, photo: 'https://picsum.photos/seed/artist/200' });
+            }
+        } catch (e) {
+            console.error("Registration error:", e);
+            let msg = e.message;
+            if (e.code === 'auth/email-already-in-use') {
+                msg = "Este e-mail já está sendo usado por outra conta.";
+            } else if (e.code === 'auth/invalid-email') {
+                msg = "O endereço de e-mail não é válido.";
+            } else if (e.code === 'auth/weak-password') {
+                msg = "A senha é muito fraca. Por favor, use uma senha mais forte.";
+            }
+            showAppAlert("Erro ao cadastrar", msg);
+        }
+    };
+
+    const handleLogout = async () => {
+        if (auth) {
+            await auth.signOut();
+            setUser(null);
+        }
+    };
+
+
     const [view, setView] = useState('daily');
     const [showAdd, setShowAdd] = useState(false);
     const [showAddGoal, setShowAddGoal] = useState(false);
-    const [newTask, setNewTask] = useState({ title: '', desc: '', time: '09:00', cat: 'Trabalho', date: new Date().toISOString().split('T')[0] });
-    const [newGoal, setNewGoal] = useState({ title: '', progress: 0 });
+    const [newTask, setNewTask] = useState({ title: '', desc: '', time: '09:00', cat: 'Trabalho', date: new Date().toISOString().split('T')[0], type: 'task' });
+    const [newGoal, setNewGoal] = useState({
+        title: '',
+        progress: 0,
+        days: [], // [0, 1, 2, 3, 4, 5, 6] for Sun-Sat
+        hours: ['08:00'],
+        frequency: 1
+    });
     const [updateRequired, setUpdateRequired] = useState(false);
     const [updateInfo, setUpdateInfo] = useState(null);
-
-    const [monthlyGoals, setMonthlyGoals] = useState(() => {
-        const saved = localStorage.getItem('minha-bagunca-goals');
-        return saved ? JSON.parse(saved) : [];
-    });
 
     // profile: name + photo (data URL or remote URL)
     const [profile, setProfile] = useState(() => {
@@ -586,33 +833,105 @@ const App = () => {
 
     const reminderTimeoutsRef = useRef([]);
 
-    // persist profile and reminders setting
-    useEffect(() => { localStorage.setItem('minha-bagunca-profile', JSON.stringify(profile)); }, [profile]);
-    useEffect(() => { localStorage.setItem('minha-bagunca-reminders', JSON.stringify(remindersEnabled)); }, [remindersEnabled]);
-    useEffect(() => { if (alarmSound) localStorage.setItem('minha-bagunca-alarm-sound', JSON.stringify(alarmSound)); }, [alarmSound]);
-    useEffect(() => { localStorage.setItem('minha-bagunca-goals', JSON.stringify(monthlyGoals)); }, [monthlyGoals]);
-    // dark mode
-    const [darkMode, setDarkMode] = useState(() => {
-        const s = localStorage.getItem('minha-bagunca-dark');
-        return s ? JSON.parse(s) : false;
-    });
+    // --- Cloud Sync State ---
+    const [tasks, setTasks] = useState([]); // Empty initially, filled by Firestore
+    const [goals, setGoals] = useState([]); // Sync with Firestore
+    const [loadingData, setLoadingData] = useState(false);
+
+    // Initial Data Load & Real-time Sync
     useEffect(() => {
-        localStorage.setItem('minha-bagunca-dark', JSON.stringify(darkMode));
+        if (!user || !db) return;
+        setLoadingData(true);
+
+        // 1. Sync Tasks
+        const tasksRef = db.collection('users').doc(user.uid).collection('tasks');
+        const unsubTasks = tasksRef.onSnapshot((snapshot) => {
+            const cloudTasks = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            setTasks(cloudTasks);
+            setLoadingData(false);
+        }, (error) => {
+            console.error("Error syncing tasks:", error);
+            setLoadingData(false);
+        });
+
+        // 2. Sync Goals
+        const goalsRef = db.collection('users').doc(user.uid).collection('goals');
+        const unsubGoals = goalsRef.onSnapshot((snapshot) => {
+            const cloudGoals = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            setGoals(cloudGoals);
+        }, (error) => {
+            console.error("Error syncing goals:", error);
+        });
+
+        // 3. Sync Settings (Profile, Dark Mode, etc.)
+        const settingsRef = db.collection('users').doc(user.uid).collection('settings').doc('preferences');
+        const unsubSettings = settingsRef.onSnapshot((docSnap) => {
+            if (docSnap.exists) {
+                const data = docSnap.data();
+                if (data.profile) setProfile(data.profile);
+                if (data.darkMode !== undefined) setDarkMode(data.darkMode);
+                if (data.themeColor) setThemeColor(data.themeColor);
+                if (data.remindersEnabled !== undefined) setRemindersEnabled(data.remindersEnabled);
+            } else {
+                // If no settings exist yet, save current defaults
+                settingsRef.set({
+                    profile,
+                    darkMode,
+                    themeColor,
+                    remindersEnabled
+                }, { merge: true });
+            }
+        });
+
+        return () => {
+            unsubTasks();
+            unsubGoals();
+            unsubSettings();
+        };
+    }, [user]);
+
+    // Save functions now write to Firestore
+    // We wrap these to replace the old local state setters where appropriate, 
+    // or we just rely on the onSnapshot to update the UI.
+
+    // Helper to write settings to cloud
+    const saveSettingsToCloud = async (key, value) => {
+        if (!user || !db) return;
+        try {
+            await db.collection('users').doc(user.uid).collection('settings').doc('preferences').set({
+                [key]: value
+            }, { merge: true });
+        } catch (e) {
+            console.error("Error saving setting:", key, e);
+        }
+    };
+
+    // Modified setters to sync to cloud
+    // Note: We keep the local setters (setDarkMode etc) to allow instant UI feedback, 
+    // but the Source of Truth is now Cloud. onSnapshot will reconcile.
+
+    // persist profile and reminders setting -> Moved to saveSettingsToCloud calls
+    useEffect(() => { if (user) saveSettingsToCloud('profile', profile); }, [profile]);
+    useEffect(() => { if (user) saveSettingsToCloud('remindersEnabled', remindersEnabled); }, [remindersEnabled]);
+    // Alarm sound is local-only preference usually, or we can sync it. Let's sync it.
+    useEffect(() => { if (user && alarmSound) saveSettingsToCloud('alarmSound', alarmSound); }, [alarmSound]);
+
+    // dark mode
+    const [darkMode, setDarkMode] = useState(false);
+    useEffect(() => {
         try {
             if (darkMode) document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark');
+            if (user) saveSettingsToCloud('darkMode', darkMode);
         } catch (e) { }
     }, [darkMode]);
+
     // document modal for Policies/Terms
     const [docModal, setDocModal] = useState({ show: false, title: '', content: '' });
 
     // theme color
-    const [themeColor, setThemeColor] = useState(() => {
-        return localStorage.getItem('minha-bagunca-theme') || '#ee9d2b';
-    });
-
+    const [themeColor, setThemeColor] = useState('#ee9d2b');
     useEffect(() => {
-        localStorage.setItem('minha-bagunca-theme', themeColor);
-
+        // ... (existing theme CSS logic) ...
         const r = parseInt(themeColor.slice(1, 3), 16);
         const g = parseInt(themeColor.slice(3, 5), 16);
         const b = parseInt(themeColor.slice(5, 7), 16);
@@ -620,7 +939,6 @@ const App = () => {
         const adjust = (c, amt) => Math.max(0, Math.min(255, c + amt));
         const lR = adjust(r, 20), lG = adjust(g, 20), lB = adjust(b, 20);
 
-        // Advanced tinting for immersive atmosphere
         const tintR = adjust(r, 240), tintG = adjust(g, 240), tintB = adjust(b, 240);
         const paperBg = darkMode ? '#09090b' : `rgb(${tintR}, ${tintG}, ${tintB})`;
         const gridOp = darkMode ? 0.04 : 0.08;
@@ -633,6 +951,8 @@ const App = () => {
         document.documentElement.style.setProperty('--bg-paper', paperBg);
         document.documentElement.style.setProperty('--grid-color', gridColor);
         document.documentElement.style.setProperty('--border-weak', `rgba(${r}, ${g}, ${b}, 0.1)`);
+
+        if (user) saveSettingsToCloud('themeColor', themeColor);
     }, [themeColor, darkMode]);
 
     // Version Check
@@ -668,24 +988,224 @@ const App = () => {
     }, []);
     const openDoc = (title, content) => setDocModal({ show: true, title, content });
 
-    useEffect(() => {
-        localStorage.setItem('minha-bagunca-tasks', JSON.stringify(tasks));
-    }, [tasks]);
+    // CRUD for Tasks (Firestore)
+    const deleteTask = async (id) => {
+        if (!user || !db) return;
+        try {
+            await db.collection('users').doc(user.uid).collection('tasks').doc(id).delete();
+        } catch (e) {
+            console.error("Error deleting task:", e);
+        }
+    };
+
+    const handleAddTask = async () => {
+        if (!newTask.title) return;
+        if (!user || !db) return;
+
+        try {
+            if (newTask.id) {
+                // Edit existing
+                // newTask.id is the Doc ID
+                const { id, ...data } = newTask; // separate id
+                await db.collection('users').doc(user.uid).collection('tasks').doc(id).set(data, { merge: true });
+            } else {
+                // Add new
+                // Use a random ID or let firestore gen it. simpler to generate ourselves for optimistic UI if needed, 
+                // but here we wait for sync.
+                const newDocRef = db.collection('users').doc(user.uid).collection('tasks').doc();
+                await newDocRef.set({
+                    ...newTask,
+                    done: false,
+                    createdAt: new Date().toISOString()
+                });
+            }
+        } catch (e) {
+            console.error("Error saving task:", e);
+            showAppAlert("Erro", "Erro ao salvar meta: " + e.message);
+        }
+
+        setShowAdd(false);
+        setNewTask({ title: '', desc: '', time: '09:00', cat: 'Trabalho', date: new Date().toISOString().split('T')[0], type: 'task' });
+    };
+
+    const toggleTask = async (id) => {
+        const task = tasks.find(t => t.id === id);
+        if (task && user && db) {
+            const newDone = !task.done;
+            try {
+                await db.collection('users').doc(user.uid).collection('tasks').doc(id).update({ done: newDone });
+                if (task.goalId) {
+                    recalculateGoalProgress(task.goalId);
+                }
+            } catch (e) {
+                console.error("Error toggling task:", e);
+            }
+        }
+    };
+
+    const recalculateGoalProgress = async (goalId) => {
+        if (!user || !db) return;
+        try {
+            const tasksSnap = await db.collection('users').doc(user.uid).collection('tasks')
+                .where('goalId', '==', goalId)
+                .get();
+
+            const goalTasks = tasksSnap.docs.map(doc => doc.data());
+            const total = goalTasks.length;
+            if (total === 0) return;
+
+            const completed = goalTasks.filter(t => t.done).length;
+            const progress = Math.round((completed / total) * 100);
+
+            await db.collection('users').doc(user.uid).collection('goals').doc(goalId).update({
+                progress: progress
+            });
+        } catch (e) {
+            console.error("Error recalculating goal progress:", e);
+        }
+    };
+
+    // --- Restored Missing Functions ---
+
+    const handleProfileFile = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setProfile(prev => ({ ...prev, photo: reader.result }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handlePickAlarmSound = async () => {
+        if (typeof window !== 'undefined' && window.chooser) {
+            try {
+                const file = await window.chooser.getFile("audio/*");
+                if (file) {
+                    setAlarmSound({
+                        uri: file.dataURI,
+                        name: file.name,
+                        channelId: 'alarm_channel_' + Date.now() // unique channel for this sound
+                    });
+                }
+            } catch (e) {
+                console.warn("Chooser error:", e);
+            }
+        } else {
+            // Fallback for browser testing
+            showAppAlert("Simulação", "No browser, simulando escolha de som.");
+            setAlarmSound({ uri: '', name: 'Som Simulado (Browser)', channelId: 'default' });
+        }
+    };
+
+    const testAlarmSound = () => {
+        if (alarmSound && alarmSound.uri) {
+            // Try Cordova Media
+            if (typeof Media !== 'undefined') {
+                const m = new Media(alarmSound.uri, () => m.release(), (err) => console.error(err));
+                m.play();
+                setTimeout(() => { m.stop(); m.release(); }, 5000);
+            } else {
+                // Browser fallback
+                const audio = new Audio(alarmSound.uri);
+                audio.play().catch(e => console.log('Audio play error', e));
+            }
+        } else {
+            showAppAlert("Aviso", "Nenhum som personalizado definido.");
+        }
+    };
+
+    const handleOpenAdd = (dateStr, type = 'task') => {
+        setNewTask({
+            title: '',
+            desc: '',
+            time: '09:00',
+            cat: 'Trabalho',
+            date: dateStr || new Date().toISOString().split('T')[0],
+            type: type
+        });
+        setShowAdd(true);
+    };
+
+    const handleEditTask = (task) => {
+        setNewTask({ ...task }); // clone to avoid direct mutation
+        setShowAdd(true);
+    };
+
+    const deleteGoal = async (id) => {
+        if (!user || !db) return;
+        try {
+            // 1. Delete associated tasks
+            const tasksSnap = await db.collection('users').doc(user.uid).collection('tasks')
+                .where('goalId', '==', id)
+                .get();
+
+            const batch = db.batch();
+            tasksSnap.forEach(doc => batch.delete(doc.ref));
+
+            // 2. Delete the goal
+            batch.delete(db.collection('users').doc(user.uid).collection('goals').doc(id));
+
+            await batch.commit();
+        } catch (e) {
+            console.error("Error deleting goal:", e);
+        }
+    };
+
+    const handleAddGoal = async () => {
+        if (!newGoal.title || !user || !db) return;
+        try {
+            // 1. Create the Goal
+            const goalRef = db.collection('users').doc(user.uid).collection('goals').doc();
+            const goalId = goalRef.id;
+
+            await goalRef.set({
+                ...newGoal,
+                createdAt: new Date().toISOString()
+            });
+
+            // 2. Generate Tasks for the next 30 days based on schedule
+            const batch = db.batch();
+            const now = new Date();
+            for (let i = 0; i < 30; i++) {
+                const day = new Date(now);
+                day.setDate(now.getDate() + i);
+                const weekDay = day.getDay(); // 0-6
+
+                // If this day is in the selected days
+                if (newGoal.days.includes(weekDay)) {
+                    const dateStr = day.toISOString().split('T')[0];
+                    newGoal.hours.forEach(hour => {
+                        const taskRef = db.collection('users').doc(user.uid).collection('tasks').doc();
+                        batch.set(taskRef, {
+                            title: newGoal.title,
+                            desc: `Meta: ${newGoal.title}`,
+                            time: hour,
+                            date: dateStr,
+                            cat: 'Urgente', // High visibility for goals
+                            done: false,
+                            type: 'task',
+                            goalId: goalId
+                        });
+                    });
+                }
+            }
+            await batch.commit();
+
+            setShowAddGoal(false);
+            setNewGoal({ title: '', progress: 0, days: [], hours: ['08:00'], frequency: 1 });
+        } catch (e) {
+            console.error("Error adding goal:", e);
+            showAppAlert("Erro", "Erro ao salvar meta: " + e.message);
+        }
+    };
 
     // helper to show notification (uses Web Notifications API when available)
     const [alertModal, setAlertModal] = useState({ show: false, title: '', body: '' });
 
-    const handleAddGoal = () => {
-        if (!newGoal.title.trim()) return;
-        setMonthlyGoals([...monthlyGoals, { ...newGoal, id: Date.now() }]);
-        setNewGoal({ title: '', progress: 0 });
-        setShowAddGoal(false);
-    };
-
-    const handleDeleteGoal = (index) => {
-        const updated = [...monthlyGoals];
-        updated.splice(index, 1);
-        setMonthlyGoals(updated);
+    const showAppAlert = (title, body) => {
+        setAlertModal({ show: true, title, body });
     };
 
     const showNotification = (task) => {
@@ -693,10 +1213,8 @@ const App = () => {
         const body = task.desc ? `${task.desc} — ${task.time}` : `Hora: ${task.time}`;
         console.log('showNotification called:', { title, body });
 
-        // Play alarm sound if app is open
-        if (alarmSound) {
-            testAlarmSound();
-        }
+        // NOTE: Sound will play when notification triggers (see 'trigger' event listener)
+        // Do NOT play sound here to avoid duplicate playback
 
         // Try Cordova local notification plugin (Native)
         let nativeStatus = 'Não verificado';
@@ -716,6 +1234,7 @@ const App = () => {
                     vibrate: true,
                     sound: alarmSound?.uri || undefined,
                     channel: alarmSound?.channelId || 'reminders',
+                    smallIcon: 'res://icon',
                     data: { taskId: task.id || null }
                 });
                 nativeStatus = 'Agendada via Plugin';
@@ -752,7 +1271,7 @@ const App = () => {
                 }
 
                 tasks.forEach(task => {
-                    if (task.done || !task.time) return;
+                    if (task.done || !task.time || task.type === 'note') return;
                     const [hh, mm] = (task.time || '00:00').split(':').map(n => parseInt(n, 10));
                     const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh || 0, mm || 0, 0, 0);
                     if (target.getTime() <= now.getTime()) return;
@@ -770,8 +1289,9 @@ const App = () => {
                         launch: true,
                         lockscreen: true,
                         channel: alarmSound?.channelId || 'reminders',
-                        smallIcon: 'res://icon',
+                        // On Android 8+, sound is defined by the channel, but passing it here doesn't hurt for older versions
                         sound: alarmSound?.uri || undefined,
+                        smallIcon: 'res://icon',
                         data: { taskId: task.id }
                     };
 
@@ -791,7 +1311,7 @@ const App = () => {
         // Fallback: in-memory timers using Notification API or alert (works only while app is open)
         tasks.forEach(task => {
             if (task.done) return; // skip completed
-            if (!task.time) return;
+            if (!task.time || task.type === 'note') return; // skip notes and no-time tasks
             const [hh, mm] = (task.time || '00:00').split(':').map(n => parseInt(n, 10));
             const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh || 0, mm || 0, 0, 0);
             if (target.getTime() <= now.getTime()) return;
@@ -861,418 +1381,442 @@ const App = () => {
                 if (window.cordova.plugins && window.cordova.plugins.notification && window.cordova.plugins.notification.local) {
                     window.cordova.plugins.notification.local.on('trigger', (notification) => {
                         console.log('Notification triggered:', notification);
+                        // Play alarm sound for 5 seconds when notification arrives
                         if (alarmSound && alarmSound.uri) {
                             if (typeof Media !== 'undefined') {
                                 const m = new Media(alarmSound.uri, () => m.release(), (err) => console.error('Media error:', err));
                                 m.play();
+                                // Stop after 5 seconds
+                                setTimeout(() => {
+                                    try {
+                                        m.stop();
+                                        m.release();
+                                    } catch (e) {
+                                        console.warn('Error stopping media:', e);
+                                    }
+                                }, 5000);
                             }
                         }
                     });
                 }
+
+
+
             } else {
-                // Browser fallback
-                setTimeout(scheduleReminders, 1000);
+                onReady();
             }
         };
         init();
-    }, [tasks, remindersEnabled]); // Reschedule if settings change
+    }, [tasks, remindersEnabled, alarmSound]);
 
 
-    const toggleTask = (id) => {
-        setTasks((prev) => prev.map(t => t.id === id ? { ...t, done: !t.done } : t));
-    };
-
-    const deleteTask = (id) => {
-        setTasks((prev) => prev.filter(t => t.id !== id));
-    };
-
-    const handleAddTask = () => {
-        if (!newTask.title) return;
-        const task = { ...newTask, id: Math.random().toString(36).substr(2, 9), done: false };
-        setTasks([...tasks, task]);
-        setShowAdd(false);
-        setNewTask({ title: '', desc: '', time: '09:00', cat: 'Trabalho', date: new Date().toISOString().split('T')[0] });
-    };
-
-
-    const handleProfileFile = (e) => {
-        const f = e.target.files && e.target.files[0];
-        if (!f) return;
-        const reader = new FileReader();
-        reader.onload = () => setProfile(prev => ({ ...prev, photo: reader.result }));
-        reader.readAsDataURL(f);
-    };
-
-    const saveLocalSound = (sourceUri, fileName) => {
-        return new Promise((resolve, reject) => {
-            if (!window.resolveLocalFileSystemURL) {
-                resolve(sourceUri); // Fallback to original
-                return;
-            }
-
-            console.log('Copying file to local storage...', sourceUri);
-            window.resolveLocalFileSystemURL(sourceUri, (fileEntry) => {
-                window.resolveLocalFileSystemURL(cordova.file.dataDirectory, (dirEntry) => {
-                    const newName = `custom_alarm_${Date.now()}_${fileName.replace(/[^a-z0-9.]/gi, '_')}`;
-                    fileEntry.copyTo(dirEntry, newName, (copiedEntry) => {
-                        console.log('File copied to:', copiedEntry.nativeURL);
-                        resolve(copiedEntry.nativeURL);
-                    }, reject);
-                }, reject);
-            }, (err) => {
-                // If the source URI cannot be resolved directly (common with content://), 
-                // we might need to use xhr to get the blob and save it if chooser didn't provide it.
-                // But cordova-plugin-chooser usually provides a reachable URI.
-                resolve(sourceUri);
-            });
-        });
-    };
-
-    const handlePickAlarmSound = () => {
-        if (typeof window !== 'undefined' && window.chooser) {
-            window.chooser.getFile('audio/*')
-                .then(async (file) => {
-                    if (file) {
-                        try {
-                            const localUri = await saveLocalSound(file.uri, file.name);
-                            const newChannelId = `alarm_ch_${Date.now()}`;
-                            console.log('Selected alarm sound:', file.name, localUri, newChannelId);
-                            setAlarmSound({ uri: localUri, name: file.name, channelId: newChannelId });
-                        } catch (e) {
-                            console.error('Copy failed, using original URI:', e);
-                            setAlarmSound({ uri: file.uri, name: file.name, channelId: `alarm_ch_${Date.now()}` });
-                        }
-                    }
-                })
-                .catch((err) => {
-                    console.error('Error picking file:', err);
-                    setAlertModal({ show: true, title: 'Erro', body: 'Não foi possível selecionar o arquivo.' });
-                });
-        } else {
-            console.warn('Chooser plugin not available');
-            setAlertModal({ show: true, title: 'Erro', body: 'Recurso de seleção de arquivos não disponível no seu dispositivo.' });
-        }
-    };
-
-    const testAlarmSound = () => {
-        if (!alarmSound || !alarmSound.uri) {
-            setAlertModal({ show: true, title: 'Aviso', body: 'Nenhuma música selecionada.' });
-            return;
-        }
-        if (typeof Media !== 'undefined') {
-            const m = new Media(alarmSound.uri, () => m.release(), (err) => console.error('Media error:', err));
-            m.play();
-            // stop after 10 seconds for testing
-            setTimeout(() => m.stop(), 10000);
-        } else {
-            const audio = new Audio(alarmSound.uri);
-            audio.play();
-            setTimeout(() => audio.pause(), 10000);
-        }
-    };
-
+    if (authLoading) return <LoadingScreen />;
 
     return (
-        <div className="app-root w-full min-h-screen flex flex-col paper-bg shadow-2xl relative transition-colors duration-500" style={{ backgroundColor: 'var(--bg-paper)' }}>
+        <>
+            {!user ? (
+                <Login onGoogleLogin={handleGoogleLogin} onEmailLogin={handleEmailLogin} onEmailRegister={handleEmailRegister} />
+            ) : (
+                <div className="app-root w-full min-h-screen flex flex-col paper-bg shadow-2xl relative transition-colors duration-500" style={{ backgroundColor: 'var(--bg-paper)' }}>
 
-            <header className="flex items-center justify-between px-6 pt-10 pb-6 sticky top-0 backdrop-blur-2xl z-40 transition-all duration-500" style={{ backgroundColor: 'var(--bg-paper)', opacity: 0.96 }}>
-                <div className="absolute inset-x-0 top-0 h-1" style={{ background: 'var(--primary-gradient)' }}></div>
-                <button
-                    onClick={() => setView('dashboard')}
-                    className={`size-11 flex items-center justify-center rounded-2xl transition-all shadow-sm border ${view === 'dashboard' ? 'bg-brand dark:bg-zinc-100 border-brand dark:border-zinc-100 text-white dark:text-zinc-900 rotate-6' : 'bg-white dark:bg-zinc-900 border-stone-100 dark:border-zinc-800 text-stone-400 dark:text-zinc-500'}`}
-                >
-                    <span className="material-symbols-outlined">grid_view</span>
-                </button>
-                <div className="flex flex-col items-center">
-                    <span className="text-xl font-black text-stone-800 dark:text-zinc-100 tracking-tighter uppercase italic">Minha Bagunça</span>
-                    <div className="h-1.5 w-10 bg-brand rounded-full mt-1 -rotate-2"></div>
-                </div>
-                <button
-                    onClick={() => setView('settings')}
-                    className={`size-11 rounded-2xl overflow-hidden border-2 transition-all ${view === 'settings' ? 'border-brand scale-110 -rotate-6' : 'border-white dark:border-zinc-800'}`}
-                >
-                    <img src={profile.photo} className="size-full object-cover" alt="Perfil" />
-                </button>
-            </header>
-
-            <main className="flex-1 px-6 pt-6 pb-32 overflow-y-auto no-scrollbar">
-                {view === 'dashboard' && <Dashboard tasks={tasks} darkMode={darkMode} />}
-                {view === 'daily' && <DailyList tasks={tasks} onToggle={toggleTask} onDelete={deleteTask} darkMode={darkMode} />}
-                {view === 'calendar' && (
-                    <CalendarView
-                        tasks={tasks}
-                        goals={monthlyGoals}
-                        onAddClick={() => setShowAddGoal(true)}
-                        onDeleteGoal={handleDeleteGoal}
-                        onToggleTask={toggleTask}
-                        onDeleteTask={deleteTask}
-                        darkMode={darkMode}
-                    />
-                )}
-                {view === 'settings' && (
-                    <div className="space-y-6 animate-content">
-                        <div className="bg-white dark:bg-zinc-900 p-8 rounded-[3rem] border border-stone-100 dark:border-zinc-800 flex flex-col items-center gap-4 text-center">
-                            <div className="size-24 rounded-[2rem] overflow-hidden rotate-6 shadow-xl border-4 border-white dark:border-zinc-800">
-                                <img src={profile.photo} className="size-full object-cover" alt="avatar" />
-                            </div>
-                            <div className="w-full">
-                                <input
-                                    type="text"
-                                    value={profile.name}
-                                    onChange={e => setProfile(prev => ({ ...prev, name: e.target.value }))}
-                                    className="w-full text-2xl font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm p-4 text-center dark:text-zinc-100"
-                                />
-                                <p className="text-xs text-stone-400 font-bold uppercase tracking-widest mt-2 text-center">Plano Bagunça Premium</p>
-                                <div className="mt-4 flex gap-3 justify-center">
-                                    <input id="profile-file" type="file" accept="image/*" onChange={handleProfileFile} style={{ display: 'none' }} />
-                                    <button onClick={() => document.getElementById('profile-file').click()} className="py-2 px-4 bg-stone-100 rounded-full text-sm font-bold">Mudar foto</button>
-                                    <button onClick={() => { localStorage.removeItem('minha-bagunca-profile'); setProfile({ name: 'Mente Criativa', photo: 'https://picsum.photos/seed/artist/200' }); }} className="py-2 px-4 bg-stone-50 rounded-full text-sm font-bold">Restaurar</button>
-                                </div>
-                            </div>
+                    <header className="flex items-center justify-between px-6 pt-10 pb-6 sticky top-0 backdrop-blur-2xl z-40 transition-all duration-500" style={{ backgroundColor: 'var(--bg-paper)', opacity: 0.96 }}>
+                        <div className="absolute inset-x-0 top-0 h-1" style={{ background: 'var(--primary-gradient)' }}></div>
+                        <button
+                            onClick={() => setView('dashboard')}
+                            className={`size-11 flex items-center justify-center rounded-2xl transition-all shadow-sm border ${view === 'dashboard' ? 'bg-brand dark:bg-zinc-100 border-brand dark:border-zinc-100 text-white dark:text-zinc-900 rotate-6' : 'bg-white dark:bg-zinc-900 border-stone-100 dark:border-zinc-800 text-stone-400 dark:text-zinc-500'}`}
+                        >
+                            <span className="material-symbols-outlined">grid_view</span>
+                        </button>
+                        <div className="flex flex-col items-center">
+                            <span className="text-xl font-black text-stone-800 dark:text-zinc-100 tracking-tighter uppercase italic">Minha Bagunça</span>
+                            <div className="h-1.5 w-10 bg-brand rounded-full mt-1 -rotate-2"></div>
                         </div>
-                        <div className="bg-white dark:bg-zinc-900 rounded-[3rem] border border-stone-100 dark:border-zinc-800 overflow-hidden divide-y divide-stone-50 dark:divide-zinc-800">
-                            <div className="p-6 flex flex-col gap-4 hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className="size-10 rounded-2xl bg-brand-light dark:bg-brand-shadow text-brand flex items-center justify-center">
-                                            <span className="material-symbols-outlined filled">notifications</span>
-                                        </div>
-                                        <span className="text-sm font-black text-stone-700 dark:text-zinc-300">Lembretes</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <label className="switch small">
-                                            <input type="checkbox" checked={remindersEnabled} onChange={e => setRemindersEnabled(e.target.checked)} />
-                                            <span className="slider"></span>
-                                        </label>
-                                        <span className="switch-label">{remindersEnabled ? 'Ativado' : 'Desativado'}</span>
-                                        <button onClick={() => showNotification({ title: 'Teste', desc: 'Notificação de teste', time: new Date().toLocaleTimeString() })} className="btn-ghost">Testar Notif.</button>
-                                    </div>
-                                </div>
-                                <div className="flex items-center justify-between pl-14">
-                                    <div className="flex-1 pr-4">
-                                        <p className="text-[9px] font-black text-stone-300 dark:text-zinc-600 uppercase tracking-widest mb-1">Arquivo Selecionado</p>
-                                        <p className="text-xs font-black text-stone-600 dark:text-zinc-400 truncate max-w-[140px]">
-                                            {alarmSound ? alarmSound.name : 'Padrão do sistema'}
-                                        </p>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button onClick={handlePickAlarmSound} className="py-2.5 px-4 bg-stone-100 dark:bg-zinc-800 rounded-2xl text-[10px] font-black uppercase tracking-tight text-stone-600 dark:text-zinc-400 active:scale-95 transition-all">Escolher</button>
-                                        {alarmSound && <button onClick={testAlarmSound} className="py-2.5 px-4 bg-brand-light dark:bg-brand-shadow rounded-2xl text-[10px] font-black uppercase tracking-tight text-brand active:scale-95 transition-all">Ouvir</button>}
-                                    </div>
-                                </div>
-                            </div>
+                        <button
+                            onClick={() => setView('settings')}
+                            className={`size-11 rounded-2xl overflow-hidden border-2 transition-all ${view === 'settings' ? 'border-brand scale-110 -rotate-6' : 'border-white dark:border-zinc-800'}`}
+                        >
+                            <img src={profile.photo} className="size-full object-cover" alt="Perfil" />
+                        </button>
+                    </header>
 
-                            <div className="p-6 flex flex-col gap-4 hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors">
-                                <div className="flex items-center gap-4">
-                                    <div className="size-10 rounded-2xl bg-stone-50 dark:bg-zinc-800 text-stone-400 dark:text-zinc-500 flex items-center justify-center">
-                                        <span className="material-symbols-outlined filled">palette</span>
+                    <main className="flex-1 px-6 pt-6 pb-32 overflow-y-auto no-scrollbar">
+                        {view === 'dashboard' && <Dashboard tasks={tasks} goals={goals} onAddGoal={() => setShowAddGoal(true)} onDeleteGoal={deleteGoal} darkMode={darkMode} />}
+                        {view === 'daily' && <DailyList tasks={tasks} onToggle={toggleTask} onDelete={deleteTask} darkMode={darkMode} />}
+                        {view === 'calendar' && (
+                            <CalendarView
+                                tasks={tasks}
+                                goals={goals}
+                                onDeleteGoal={deleteGoal}
+                                onAddClick={() => setShowAddGoal(true)}
+                                onToggleTask={toggleTask}
+                                onDeleteTask={deleteTask}
+                                darkMode={darkMode}
+                                onOpenAdd={handleOpenAdd}
+                                onEditTask={handleEditTask}
+                            />
+                        )}
+                        {view === 'settings' && (
+                            <div className="space-y-6 animate-content">
+                                <div className="bg-white dark:bg-zinc-900 p-8 rounded-[3rem] border border-stone-100 dark:border-zinc-800 flex flex-col items-center gap-4 text-center">
+                                    <div className="size-24 rounded-[2rem] overflow-hidden rotate-6 shadow-xl border-4 border-white dark:border-zinc-800">
+                                        <img src={profile.photo} className="size-full object-cover" alt="avatar" />
                                     </div>
-                                    <span className="text-sm font-black text-stone-700 dark:text-zinc-300">Cor do App</span>
-                                </div>
-                                <div className="flex gap-4 pl-14 overflow-x-auto py-1 hide-scrollbar">
-                                    {[
-                                        { name: 'Laranja', color: '#ee9d2b' },
-                                        { name: 'Azul', color: '#3b82f6' },
-                                        { name: 'Roxo', color: '#8b5cf6' },
-                                        { name: 'Verde', color: '#10b981' },
-                                        { name: 'Rosa', color: '#f43f5e' }
-                                    ].map(c => (
-                                        <button
-                                            key={c.color}
-                                            onClick={() => setThemeColor(c.color)}
-                                            className={`size-10 rounded-full flex-shrink-0 transition-all ${themeColor === c.color ? 'scale-125 ring-4 ring-white dark:ring-zinc-800 shadow-xl' : 'scale-90 hover:scale-110 shadow-sm'}`}
-                                            style={{ backgroundColor: c.color }}
-                                            aria-label={c.name}
+                                    <div className="w-full">
+                                        <input
+                                            type="text"
+                                            value={profile.name}
+                                            onChange={e => setProfile(prev => ({ ...prev, name: e.target.value }))}
+                                            className="w-full text-2xl font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm p-4 text-center dark:text-zinc-100"
                                         />
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="p-6 flex items-center justify-between hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors">
-                                <div className="flex items-center gap-4">
-                                    <div className="size-10 rounded-2xl bg-stone-50 dark:bg-zinc-800 text-stone-400 dark:text-zinc-500 flex items-center justify-center">
-                                        <span className="material-symbols-outlined filled">dark_mode</span>
+                                        <div className="mt-2 flex flex-col items-center">
+                                            <p className="text-xs text-stone-400 font-bold uppercase tracking-widest leading-none">Plano Bagunça Premium</p>
+                                            <p className="text-[9px] text-stone-300 dark:text-zinc-600 font-bold mt-1 truncate max-w-[200px]">{user.email}</p>
+                                        </div>
+                                        <div className="mt-4 flex gap-3 justify-center">
+                                            <input id="profile-file" type="file" accept="image/*" onChange={handleProfileFile} style={{ display: 'none' }} />
+                                            <button onClick={() => document.getElementById('profile-file').click()} className="py-2 px-4 bg-stone-100 dark:bg-zinc-800 rounded-full text-xs font-bold dark:text-zinc-300">Mudar foto</button>
+                                            <button onClick={handleLogout} className="py-2 px-4 bg-red-50 dark:bg-red-900/10 text-red-500 rounded-full text-xs font-bold">Sair</button>
+                                        </div>
                                     </div>
-                                    <span className="text-sm font-black text-stone-700 dark:text-zinc-300">Modo Noturno Premium</span>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <label className="switch small">
-                                        <input type="checkbox" checked={darkMode} onChange={e => setDarkMode(e.target.checked)} />
-                                        <span className="slider"></span>
-                                    </label>
-                                    <span className="switch-label dark:text-zinc-400">{darkMode ? 'Ativado' : 'Desativado'}</span>
-                                </div>
-                            </div>
-                            <div className="p-6 flex items-center justify-between hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors">
-                                <div className="flex items-center gap-4">
-                                    <div className="size-10 rounded-2xl bg-stone-50 dark:bg-zinc-800 text-stone-400 dark:text-zinc-500 flex items-center justify-center">
-                                        <span className="material-symbols-outlined filled">info</span>
+                                <div className="bg-white dark:bg-zinc-900 rounded-[3rem] border border-stone-100 dark:border-zinc-800 overflow-hidden divide-y divide-stone-50 dark:divide-zinc-800">
+                                    <div className="p-6 flex flex-col gap-4 hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className="size-10 rounded-2xl bg-brand-light dark:bg-brand-shadow text-brand flex items-center justify-center">
+                                                    <span className="material-symbols-outlined filled">notifications</span>
+                                                </div>
+                                                <span className="text-sm font-black text-stone-700 dark:text-zinc-300">Lembretes</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <label className="switch small">
+                                                    <input type="checkbox" checked={remindersEnabled} onChange={e => setRemindersEnabled(e.target.checked)} />
+                                                    <span className="slider"></span>
+                                                </label>
+                                                <span className="switch-label">{remindersEnabled ? 'Ativado' : 'Desativado'}</span>
+                                                <button onClick={() => showNotification({ title: 'Teste', desc: 'Notificação de teste', time: new Date().toLocaleTimeString() })} className="btn-ghost">Testar Notif.</button>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-between pl-14">
+                                            <div className="flex-1 pr-4">
+                                                <p className="text-[9px] font-black text-stone-300 dark:text-zinc-600 uppercase tracking-widest mb-1">Arquivo Selecionado</p>
+                                                <p className="text-xs font-black text-stone-600 dark:text-zinc-400 truncate max-w-[140px]">
+                                                    {alarmSound ? alarmSound.name : 'Padrão do sistema'}
+                                                </p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button onClick={handlePickAlarmSound} className="py-2.5 px-4 bg-stone-100 dark:bg-zinc-800 rounded-2xl text-[10px] font-black uppercase tracking-tight text-stone-600 dark:text-zinc-400 active:scale-95 transition-all">Escolher</button>
+                                                {alarmSound && <button onClick={testAlarmSound} className="py-2.5 px-4 bg-brand-light dark:bg-brand-shadow rounded-2xl text-[10px] font-black uppercase tracking-tight text-brand active:scale-95 transition-all">Ouvir</button>}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <span className="text-sm font-black text-stone-700 dark:text-zinc-300">Versão do App</span>
-                                </div>
-                                <div className="text-sm text-stone-400 dark:text-zinc-500 font-bold">1.0.1</div>
-                            </div>
-                            <div className="p-6 flex items-center justify-between hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer" onClick={() => openDoc('Política de Privacidade', PRIVACY_POLICY)}>
-                                <div className="flex items-center gap-4">
-                                    <div className="size-10 rounded-2xl bg-stone-50 dark:bg-zinc-800 text-stone-400 dark:text-zinc-500 flex items-center justify-center">
-                                        <span className="material-symbols-outlined filled">policy</span>
-                                    </div>
-                                    <span className="text-sm font-black text-stone-700 dark:text-zinc-300">Política de Privacidade</span>
-                                </div>
-                                <div className="text-sm text-stone-400 dark:text-zinc-500">Abrir</div>
-                            </div>
 
-                            <div className="p-6 flex items-center justify-between hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer" onClick={() => openDoc('Termos de Uso', TERMS_OF_USE)}>
-                                <div className="flex items-center gap-4">
-                                    <div className="size-10 rounded-2xl bg-stone-50 dark:bg-zinc-800 text-stone-400 dark:text-zinc-500 flex items-center justify-center">
-                                        <span className="material-symbols-outlined filled">description</span>
+                                    <div className="p-6 flex flex-col gap-4 hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className="size-10 rounded-2xl bg-stone-50 dark:bg-zinc-800 text-stone-400 dark:text-zinc-500 flex items-center justify-center">
+                                                <span className="material-symbols-outlined filled">palette</span>
+                                            </div>
+                                            <span className="text-sm font-black text-stone-700 dark:text-zinc-300">Cor do App</span>
+                                        </div>
+                                        <div className="flex gap-4 pl-14 overflow-x-auto py-1 hide-scrollbar">
+                                            {[
+                                                { name: 'Laranja', color: '#ee9d2b' },
+                                                { name: 'Azul', color: '#3b82f6' },
+                                                { name: 'Roxo', color: '#8b5cf6' },
+                                                { name: 'Verde', color: '#10b981' },
+                                                { name: 'Rosa', color: '#f43f5e' }
+                                            ].map(c => (
+                                                <button
+                                                    key={c.color}
+                                                    onClick={() => setThemeColor(c.color)}
+                                                    className={`size-10 rounded-full flex-shrink-0 transition-all ${themeColor === c.color ? 'scale-125 ring-4 ring-white dark:ring-zinc-800 shadow-xl' : 'scale-90 hover:scale-110 shadow-sm'}`}
+                                                    style={{ backgroundColor: c.color }}
+                                                    aria-label={c.name}
+                                                />
+                                            ))}
+                                        </div>
                                     </div>
-                                    <span className="text-sm font-black text-stone-700 dark:text-zinc-300">Termos de Uso</span>
-                                </div>
-                                <div className="text-sm text-stone-400 dark:text-zinc-500">Abrir</div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </main>
+                                    <div className="p-6 flex items-center justify-between hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className="size-10 rounded-2xl bg-stone-50 dark:bg-zinc-800 text-stone-400 dark:text-zinc-500 flex items-center justify-center">
+                                                <span className="material-symbols-outlined filled">dark_mode</span>
+                                            </div>
+                                            <span className="text-sm font-black text-stone-700 dark:text-zinc-300">Modo Noturno Premium</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <label className="switch small">
+                                                <input type="checkbox" checked={darkMode} onChange={e => setDarkMode(e.target.checked)} />
+                                                <span className="slider"></span>
+                                            </label>
+                                            <span className="switch-label dark:text-zinc-400">{darkMode ? 'Ativado' : 'Desativado'}</span>
+                                        </div>
+                                    </div>
+                                    <div className="p-6 flex items-center justify-between hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className="size-10 rounded-2xl bg-stone-50 dark:bg-zinc-800 text-stone-400 dark:text-zinc-500 flex items-center justify-center">
+                                                <span className="material-symbols-outlined filled">info</span>
+                                            </div>
+                                            <span className="text-sm font-black text-stone-700 dark:text-zinc-300">Versão do App</span>
+                                        </div>
+                                        <div className="text-sm text-stone-400 dark:text-zinc-500 font-bold">{APP_VERSION}</div>
+                                    </div>
+                                    <div className="p-6 flex items-center justify-between hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer" onClick={() => openDoc('Política de Privacidade', PRIVACY_POLICY)}>
+                                        <div className="flex items-center gap-4">
+                                            <div className="size-10 rounded-2xl bg-stone-50 dark:bg-zinc-800 text-stone-400 dark:text-zinc-500 flex items-center justify-center">
+                                                <span className="material-symbols-outlined filled">policy</span>
+                                            </div>
+                                            <span className="text-sm font-black text-stone-700 dark:text-zinc-300">Política de Privacidade</span>
+                                        </div>
+                                        <div className="text-sm text-stone-400 dark:text-zinc-500">Abrir</div>
+                                    </div>
 
-            <nav className="fixed bottom-0 left-0 right-0 w-full h-24 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl border-t border-stone-50 dark:border-zinc-800 shadow-[0_-20px_50px_rgba(0,0,0,0.04)] z-40 px-6 md:px-10 flex items-center justify-around transition-colors duration-500">
-                {[
-                    { id: 'dashboard', icon: 'auto_graph' },
-                    { id: 'daily', icon: 'format_list_bulleted' },
-                    { id: 'calendar', icon: 'calendar_today' },
-                    { id: 'settings', icon: 'settings' }
-                ].map(tab => (
-                    <button key={tab.id} onClick={() => setView(tab.id)} className={`transition-all duration-300 ${view === tab.id ? 'tab-active' : 'tab-inactive'}`}>
-                        <span className={`material-symbols-outlined text-3xl ${view === tab.id ? 'filled' : ''}`}>{tab.icon}</span>
+                                    <div className="p-6 flex items-center justify-between hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer" onClick={() => openDoc('Termos de Uso', TERMS_OF_USE)}>
+                                        <div className="flex items-center gap-4">
+                                            <div className="size-10 rounded-2xl bg-stone-50 dark:bg-zinc-800 text-stone-400 dark:text-zinc-500 flex items-center justify-center">
+                                                <span className="material-symbols-outlined filled">description</span>
+                                            </div>
+                                            <span className="text-sm font-black text-stone-700 dark:text-zinc-300">Termos de Uso</span>
+                                        </div>
+                                        <div className="text-sm text-stone-400 dark:text-zinc-500">Abrir</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Floating Action Button */}
+                    <button
+                        onClick={() => handleOpenAdd(new Date().toISOString().split('T')[0])}
+                        className="fixed bottom-28 right-6 size-16 bg-brand text-white rounded-[2rem] shadow-2xl shadow-brand/40 flex items-center justify-center active:scale-90 transition-all z-50 group hover:rotate-90"
+                        style={{ transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)' }}
+                    >
+                        <span className="material-symbols-outlined text-3xl font-black">add</span>
                     </button>
-                ))}
-            </nav>
 
-            <button
-                onClick={() => setShowAdd(true)}
-                className="fixed bottom-28 right-8 size-16 bg-brand text-white rounded-[2rem] shadow-2xl flex items-center justify-center hover:scale-110 active:scale-90 transition-all rotate-12 border-4 border-white dark:border-zinc-800 z-50 group"
-                style={{ boxShadow: '0 15px 45px var(--primary-shadow)' }}
-            >
-                <span className="material-symbols-outlined text-4xl font-black group-hover:rotate-90 transition-transform duration-500">add</span>
-            </button>
-
-            {showAdd && (
-                <div className="fixed inset-0 bg-stone-200/40 dark:bg-black/80 backdrop-blur-sm z-[100] flex flex-col justify-end" onClick={() => setShowAdd(false)}>
-                    <div className="bg-white dark:bg-zinc-900 modal-card rounded-t-[4rem] p-10 animate-content shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-10">
-                            <h3 className="text-3xl font-black text-stone-800 dark:text-zinc-100 tracking-tighter">Nova Bagunça</h3>
-                            <button onClick={() => setShowAdd(false)} className="size-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 active:scale-90 transition-all border-none">
-                                <span className="material-symbols-outlined font-black">close</span>
-                            </button>
-                        </div>
-                        <div className="space-y-8">
-                            <div className="space-y-2">
-                                <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">O que vamos bagunçar?</p>
-                                <input
-                                    type="text"
-                                    placeholder="Ex: Pintar o mundo"
-                                    value={newTask.title}
-                                    onChange={e => setNewTask({ ...newTask, title: e.target.value })}
-                                    className="w-full text-2xl font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm focus:ring-4 focus:ring-brand-light dark:focus:ring-brand-light/20 p-6 placeholder:text-stone-300 dark:placeholder:text-zinc-600 dark:text-zinc-100"
-                                    autoFocus
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Data</p>
-                                    <input
-                                        type="date"
-                                        value={newTask.date}
-                                        onChange={e => setNewTask({ ...newTask, date: e.target.value })}
-                                        className="w-full font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm p-6 focus:ring-4 focus:ring-brand-light dark:text-zinc-100"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Horário</p>
-                                    <input
-                                        type="time"
-                                        value={newTask.time}
-                                        onChange={e => setNewTask({ ...newTask, time: e.target.value })}
-                                        className="w-full font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm p-6 focus:ring-4 focus:ring-brand-light dark:text-zinc-100"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Categoria</p>
-                                    <select
-                                        value={newTask.cat}
-                                        onChange={e => setNewTask({ ...newTask, cat: e.target.value })}
-                                        className="w-full font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm p-6 focus:ring-4 focus:ring-brand-light dark:focus:ring-brand-light/20 appearance-none dark:text-zinc-100"
-                                    >
-                                        {Object.keys(CATEGORIES).map(c => <option key={c}>{c}</option>)}
-                                    </select>
-                                </div>
-                            </div>
+                    <nav className="fixed bottom-0 left-0 right-0 w-full h-24 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl border-t border-stone-50 dark:border-zinc-800 shadow-[0_-20px_50px_rgba(0,0,0,0.04)] z-40 px-6 md:px-10 flex items-center justify-around transition-colors duration-500">
+                        {[
+                            { id: 'dashboard', icon: 'grid_view' },
+                            { id: 'daily', icon: 'checklist' },
+                            { id: 'calendar', icon: 'calendar_month' },
+                            { id: 'settings', icon: 'settings' }
+                        ].map(item => (
                             <button
-                                onClick={handleAddTask}
-                                className="w-full py-6 bg-brand text-white rounded-[2.5rem] font-black text-xl shadow-2xl active:scale-95 transition-all mt-4 hover:brightness-90"
-                                style={{ boxShadow: '0 20px 40px var(--primary-shadow)' }}
+                                key={item.id}
+                                onClick={() => setView(item.id)}
+                                className={`size-14 rounded-[2rem] flex items-center justify-center transition-all duration-300 ${view === item.id ? 'bg-brand text-white shadow-xl shadow-brand/30 scale-110 -translate-y-2' : 'text-stone-300 dark:text-zinc-600 hover:bg-stone-50 dark:hover:bg-zinc-800'}`}
                             >
-                                Confirmar Bagunça
+                                <span className="material-symbols-outlined text-2xl font-black">{item.icon}</span>
                             </button>
+                        ))}
+                    </nav>
+
+                    {/* Add Task Modal */}
+                    {showAdd && (
+                        <div className="fixed inset-0 bg-stone-200/40 dark:bg-black/80 backdrop-blur-sm z-[100] flex flex-col justify-end" onClick={() => setShowAdd(false)}>
+                            <div className={`modal-card rounded-t-[4rem] p-10 animate-content shadow-2xl ${newTask.type === 'note' ? 'bg-[#fffdf5] dark:bg-zinc-900 border-t-4 border-yellow-200 dark:border-yellow-900/20' : 'bg-white dark:bg-zinc-900'}`} onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-10">
+                                    <h3 className="text-3xl font-black text-stone-800 dark:text-zinc-100 tracking-tighter">Nova Bagunça</h3>
+                                    <button onClick={() => setShowAdd(false)} className="size-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 active:scale-90 transition-all border-none">
+                                        <span className="material-symbols-outlined font-black">close</span>
+                                    </button>
+                                </div>
+                                <div className="space-y-8">
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">
+                                                {newTask.type === 'note' ? 'Título da Nota' : 'O que vamos bagunçar?'}
+                                            </p>
+                                            <input
+                                                type="text"
+                                                placeholder={newTask.type === 'note' ? "Ex: Ideia Brilhante" : "Ex: Pintar o mundo"}
+                                                value={newTask.title}
+                                                onChange={e => setNewTask({ ...newTask, title: e.target.value })}
+                                                className="w-full text-2xl font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm focus:ring-4 focus:ring-brand-light dark:focus:ring-brand-light/20 p-6 placeholder:text-stone-300 dark:placeholder:text-zinc-600 dark:text-zinc-100"
+                                                autoFocus
+                                            />
+                                        </div>
+
+                                        {newTask.type === 'note' && (
+                                            <div className="space-y-2">
+                                                <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Descrição</p>
+                                                <textarea
+                                                    placeholder="Escreva sua nota aqui..."
+                                                    value={newTask.desc || ''}
+                                                    onChange={e => setNewTask({ ...newTask, desc: e.target.value })}
+                                                    className="w-full h-64 text-base font-medium bg-transparent border-none focus:ring-0 p-0 placeholder:text-stone-300 dark:placeholder:text-zinc-600 dark:text-zinc-100 resize-none leading-relaxed"
+                                                ></textarea>
+                                            </div>
+                                        )}
+
+                                        {newTask.type !== 'note' && (
+                                            <>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => setNewTask({ ...newTask, type: 'task' })}
+                                                        className={`flex-1 py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all ${newTask.type === 'task' ? 'bg-brand text-white shadow-lg' : 'bg-stone-100 dark:bg-zinc-800 text-stone-400'}`}
+                                                    >
+                                                        Tarefa
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setNewTask({ ...newTask, type: 'note' })}
+                                                        className={`flex-1 py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all ${newTask.type === 'note' ? 'bg-yellow-400 text-white shadow-lg' : 'bg-stone-100 dark:bg-zinc-800 text-stone-400'}`}
+                                                    >
+                                                        Nota
+                                                    </button>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-6">
+                                                    <div className="space-y-2">
+                                                        <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Data</p>
+                                                        <input
+                                                            type="date"
+                                                            value={newTask.date}
+                                                            onChange={e => setNewTask({ ...newTask, date: e.target.value })}
+                                                            className="w-full font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm p-6 focus:ring-4 focus:ring-brand-light dark:text-zinc-100"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Horário</p>
+                                                        <input
+                                                            type="time"
+                                                            value={newTask.time}
+                                                            onChange={e => setNewTask({ ...newTask, time: e.target.value })}
+                                                            className="w-full font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm p-6 focus:ring-4 focus:ring-brand-light dark:text-zinc-100"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Categoria</p>
+                                                        <select
+                                                            value={newTask.cat}
+                                                            onChange={e => setNewTask({ ...newTask, cat: e.target.value })}
+                                                            className="w-full font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm p-6 focus:ring-4 focus:ring-brand-light dark:focus:ring-brand-light/20 appearance-none dark:text-zinc-100"
+                                                        >
+                                                            {Object.keys(CATEGORIES).map(c => <option key={c}>{c}</option>)}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={handleAddTask}
+                                        className="w-full py-6 bg-brand text-white rounded-[2.5rem] font-black text-xl shadow-2xl active:scale-95 transition-all mt-4 hover:brightness-90"
+                                        style={{ boxShadow: '0 20px 40px var(--primary-shadow)' }}
+                                    >
+                                        {newTask.type === 'note' ? 'Salvar Nota' : 'Confirmar Bagunça'}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    )}
+                    {showAddGoal && (
+                        <div className="fixed inset-0 bg-stone-200/40 dark:bg-black/80 backdrop-blur-sm z-[100] flex flex-col justify-end" onClick={() => setShowAddGoal(false)}>
+                            <div className="bg-white dark:bg-zinc-900 modal-card rounded-t-[4rem] p-10 animate-content shadow-2xl" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-10">
+                                    <h3 className="text-3xl font-black text-stone-800 dark:text-zinc-100 tracking-tighter">Nova Meta</h3>
+                                    <button onClick={() => setShowAddGoal(false)} className="size-10 rounded-full bg-stone-100 dark:bg-zinc-800 flex items-center justify-center text-stone-600 dark:text-zinc-300 active:scale-90 transition-all border-none">
+                                        <span className="material-symbols-outlined font-black">close</span>
+                                    </button>
+                                </div>
+                                <div className="space-y-8">
+                                    <div className="space-y-2">
+                                        <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">O que quer conquistar?</p>
+                                        <input
+                                            type="text"
+                                            placeholder="Ex: Ler 3 livros"
+                                            value={newGoal.title}
+                                            onChange={e => setNewGoal({ ...newGoal, title: e.target.value })}
+                                            className="w-full text-2xl font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm focus:ring-4 focus:ring-brand-light dark:focus:ring-brand-light/20 p-6 placeholder:text-stone-300 dark:placeholder:text-zinc-600 dark:text-zinc-100"
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Freq. Semanal</p>
+                                                <select
+                                                    value={newGoal.frequency}
+                                                    onChange={e => setNewGoal({ ...newGoal, frequency: parseInt(e.target.value) })}
+                                                    className="w-full font-black bg-stone-50 dark:bg-zinc-800 rounded-2xl border-none shadow-sm p-4 text-xs dark:text-zinc-100"
+                                                >
+                                                    {[1, 2, 3, 4, 5, 6, 7].map(n => <option key={n} value={n}>{n}x por semana</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Horário</p>
+                                                <input
+                                                    type="time"
+                                                    value={newGoal.hours[0]}
+                                                    onChange={e => setNewGoal({ ...newGoal, hours: [e.target.value] })}
+                                                    className="w-full font-black bg-stone-50 dark:bg-zinc-800 rounded-2xl border-none shadow-sm p-4 text-xs dark:text-zinc-100"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Dias da Semana</p>
+                                            <div className="flex justify-between gap-1 overflow-x-auto pb-2 no-scrollbar">
+                                                {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => (
+                                                    <button
+                                                        key={i}
+                                                        onClick={() => {
+                                                            const nd = newGoal.days.includes(i)
+                                                                ? newGoal.days.filter(x => x !== i)
+                                                                : [...newGoal.days, i];
+                                                            setNewGoal({ ...newGoal, days: nd });
+                                                        }}
+                                                        className={`size-10 rounded-xl font-black text-xs transition-all ${newGoal.days.includes(i) ? 'bg-brand text-white shadow-lg' : 'bg-stone-50 dark:bg-zinc-800 text-stone-400'}`}
+                                                    >
+                                                        {d}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Progresso Inicial: {newGoal.progress}%</p>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="100"
+                                                value={newGoal.progress}
+                                                onChange={e => setNewGoal({ ...newGoal, progress: parseInt(e.target.value) })}
+                                                className="w-full accent-brand h-2 bg-stone-50 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer"
+                                            />
+                                        </div>
+                                    </div>
+                                    <button onClick={handleAddGoal} className="w-full py-6 bg-brand text-white text-xl font-black rounded-[2.5rem] shadow-xl shadow-brand/20 active:scale-95 transition-all mt-4">Definir Meta</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
-            {showAddGoal && (
-                <div className="fixed inset-0 bg-stone-200/40 dark:bg-black/80 backdrop-blur-sm z-[100] flex flex-col justify-end" onClick={() => setShowAddGoal(false)}>
-                    <div className="bg-white dark:bg-zinc-900 modal-card rounded-t-[4rem] p-10 animate-content shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-10">
-                            <h3 className="text-3xl font-black text-stone-800 dark:text-zinc-100 tracking-tighter">Nova Meta</h3>
-                            <button onClick={() => setShowAddGoal(false)} className="size-10 rounded-full bg-stone-100 dark:bg-zinc-800 flex items-center justify-center text-stone-600 dark:text-zinc-300 active:scale-90 transition-all border-none">
-                                <span className="material-symbols-outlined font-black">close</span>
-                            </button>
-                        </div>
-                        <div className="space-y-8">
-                            <div className="space-y-2">
-                                <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">O que quer conquistar?</p>
-                                <input
-                                    type="text"
-                                    placeholder="Ex: Ler 3 livros"
-                                    value={newGoal.title}
-                                    onChange={e => setNewGoal({ ...newGoal, title: e.target.value })}
-                                    className="w-full text-2xl font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm focus:ring-4 focus:ring-brand-light dark:focus:ring-brand-light/20 p-6 placeholder:text-stone-300 dark:placeholder:text-zinc-600 dark:text-zinc-100"
-                                    autoFocus
-                                />
-                            </div>
-                            <div className="space-y-4">
-                                <p className="text-[11px] font-black text-stone-300 uppercase tracking-widest ml-1">Progresso Inicial: {newGoal.progress}%</p>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={newGoal.progress}
-                                    onChange={e => setNewGoal({ ...newGoal, progress: parseInt(e.target.value) })}
-                                    className="w-full accent-brand h-2 bg-stone-100 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer"
-                                />
-                            </div>
-                            <button onClick={handleAddGoal} className="w-full py-6 bg-brand text-white text-xl font-black rounded-3xl shadow-xl shadow-brand/20 active:scale-95 transition-all">Definir Meta</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {/* In-app alert modal (fallback) */}
+
             {alertModal.show && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setAlertModal({ show: false, title: '', body: '' })}></div>
-                    <div className="relative w-[92%] max-w-lg bg-white dark:bg-[#0f1724] modal-card rounded-2xl shadow-2xl p-6 mx-4">
-                        <h3 className="text-lg font-black text-stone-800 dark:text-white mb-2">{alertModal.title}</h3>
-                        <p className="text-sm text-stone-500 dark:text-stone-300 mb-6">{alertModal.body}</p>
-                        <div className="flex justify-end">
-                            <button onClick={() => setAlertModal({ show: false, title: '', body: '' })} className="btn-primary">OK</button>
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-stone-200/40 dark:bg-black/60 backdrop-blur-sm animate-content">
+                    <div className="absolute inset-0" onClick={() => setAlertModal({ show: false, title: '', body: '' })}></div>
+                    <div className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-[3rem] shadow-2xl border border-stone-100 dark:border-zinc-800 p-8 flex flex-col items-center text-center">
+                        <div className="size-16 rounded-2xl bg-brand-light dark:bg-brand-shadow flex items-center justify-center text-brand mb-6">
+                            <span className="material-symbols-outlined text-3xl filled">
+                                {alertModal.title === 'Erro' ? 'error' : (alertModal.title === 'Aviso' ? 'warning' : 'info')}
+                            </span>
                         </div>
+                        <h3 className="text-xl font-black text-stone-800 dark:text-zinc-100 tracking-tight mb-2">{alertModal.title}</h3>
+                        <p className="text-sm font-medium text-stone-500 dark:text-zinc-400 leading-relaxed mb-8">{alertModal.body}</p>
+                        <button
+                            onClick={() => setAlertModal({ show: false, title: '', body: '' })}
+                            className="w-full py-4 bg-brand text-white rounded-2xl font-black text-sm shadow-lg shadow-brand/20 active:scale-95 transition-all"
+                        >
+                            Entendi
+                        </button>
                     </div>
                 </div>
             )}
-            {/* Document modal for Privacy / Terms */}
+
             {docModal.show && (
-                <div className="fixed inset-0 z-[115] flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/50" onClick={() => setDocModal({ show: false, title: '', content: '' })}></div>
-                    <div className="relative w-[94%] max-w-2xl bg-white dark:bg-[#071025] modal-card rounded-2xl shadow-2xl p-0 mx-4 max-h-[86vh] overflow-hidden">
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setDocModal({ show: false, title: '', content: '' })}></div>
+                    <div className="relative w-full max-w-2xl bg-white dark:bg-[#071025] modal-card rounded-2xl shadow-2xl p-0 max-h-[86vh] overflow-hidden">
                         <div className="p-6 border-b border-stone-100 dark:border-stone-800 flex items-start justify-between gap-4">
                             <div>
                                 <h3 className="text-lg font-black text-stone-800 dark:text-white mb-1">{docModal.title}</h3>
@@ -1298,9 +1842,8 @@ const App = () => {
                 </div>
             )}
 
-            {/* Update Required Modal - Cannot be dismissed */}
             {updateRequired && updateInfo && (
-                <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] flex items-center justify-center p-6">
+                <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[1000] flex items-center justify-center p-6">
                     <div className="bg-white dark:bg-zinc-900 rounded-[3rem] p-10 max-w-md w-full shadow-2xl border-4 border-brand animate-content">
                         <div className="text-center space-y-6">
                             <div className="size-24 mx-auto rounded-full bg-brand/10 flex items-center justify-center">
@@ -1333,7 +1876,7 @@ const App = () => {
                     </div>
                 </div>
             )}
-        </div >
+        </>
     );
 };
 

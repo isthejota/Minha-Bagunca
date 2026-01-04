@@ -1,6 +1,6 @@
 {
-    "minVersion": "1.0.0",
-    "latestVersion": "1.0.0",
+    "minVersion": "1.0.2",
+    "latestVersion": "1.0.2",
     "downloadUrl": "https://github.com/isthejota/minha-bagunca/releases/latest",
     "updateMessage": "Uma nova versão do Minha Bagunça está disponível! Por favor, atualize para continuar usando o app com todas as novidades e melhorias.",
     "forceUpdate": true
