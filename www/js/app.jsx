@@ -289,7 +289,7 @@ const Login = ({ onGoogleLogin, onEmailLogin, onEmailRegister }) => {
                 onClick={onGoogleLogin}
                 className="w-full max-w-xs py-4 bg-white dark:bg-zinc-800 text-stone-600 dark:text-zinc-300 rounded-[1.5rem] font-black text-base shadow-md border border-stone-100 dark:border-zinc-700 active:scale-95 transition-all flex items-center justify-center gap-3 hover:bg-stone-50 dark:hover:bg-zinc-700"
             >
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/pwa_list/google.svg" className="size-5" alt="Google" />
+                <img src="https://i.imgur.com/AIXUWKt.png" className="size-5" alt="Google" />
                 Google
             </button>
 
@@ -355,7 +355,7 @@ const DailyList = ({ tasks, onToggle, onDelete, onEdit, darkMode }) => {
                                     <button onClick={() => onEdit(task)} className="size-8 rounded-full flex items-center justify-center text-stone-400 hover:text-brand transition-colors">
                                         <span className="material-symbols-outlined text-lg">edit</span>
                                     </button>
-                                    <button onClick={() => onDelete(task.id)} className="size-8 rounded-full flex items-center justify-center text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                    <button onClick={() => onDelete(task.id)} className="size-8 rounded-full flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                                         <span className="material-symbols-outlined text-lg">delete</span>
                                     </button>
                                 </div>
@@ -368,9 +368,9 @@ const DailyList = ({ tasks, onToggle, onDelete, onEdit, darkMode }) => {
     );
 };
 
-const CalendarView = ({ tasks, goals, onAddClick, onDeleteGoal, onToggleTask, onDeleteTask, darkMode, onOpenAdd, onEditTask }) => {
+const CalendarView = ({ tasks, goals, onDeleteGoal, onToggleTask, onDeleteTask, darkMode, onOpenAdd, onEditTask, isPremium, onLockClick }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [viewMode, setViewMode] = useState('Agenda');
+    const [viewMode, setViewMode] = useState(isPremium ? 'Agenda' : 'Mês');
 
     const daysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
     const firstDayOfMonth = (month, year) => {
@@ -438,10 +438,17 @@ const CalendarView = ({ tasks, goals, onAddClick, onDeleteGoal, onToggleTask, on
                     {['Agenda', 'Mês', 'Semana', 'Dia'].map(mode => (
                         <button
                             key={mode}
-                            onClick={() => setViewMode(mode)}
-                            className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${viewMode === mode ? 'bg-brand text-white shadow-lg' : 'text-stone-500 hover:text-stone-800'}`}
+                            onClick={() => {
+                                if (!isPremium && mode === 'Agenda') {
+                                    onLockClick();
+                                } else {
+                                    setViewMode(mode);
+                                }
+                            }}
+                            className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${viewMode === mode ? 'bg-brand text-white shadow-lg' : 'text-stone-500 hover:text-stone-800'} ${!isPremium && mode === 'Agenda' ? 'opacity-50' : ''}`}
                         >
                             {mode}
+                            {!isPremium && mode === 'Agenda' && <span className="material-symbols-outlined text-[8px] ml-1 filled">workspace_premium</span>}
                         </button>
                     ))}
                 </div>
@@ -517,7 +524,7 @@ const CalendarView = ({ tasks, goals, onAddClick, onDeleteGoal, onToggleTask, on
                                                         </div>
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); onDeleteTask(t.id); }}
-                                                            className="size-6 rounded-full flex items-center justify-center text-stone-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
+                                                            className="size-6 rounded-full flex items-center justify-center text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
                                                         >
                                                             <span className="material-symbols-outlined text-sm">delete</span>
                                                         </button>
@@ -561,17 +568,21 @@ const CalendarView = ({ tasks, goals, onAddClick, onDeleteGoal, onToggleTask, on
                                                     <span className={`text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter ${CATEGORIES[t.cat]?.color === 'red' ? 'bg-red-50 text-red-500' : 'bg-brand-light text-brand'}`}>
                                                         {t.cat}
                                                     </span>
-                                                    <span className="material-symbols-outlined text-sm text-stone-300">edit</span>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); onEditTask(t); }}
+                                                        className="size-6 flex items-center justify-center text-stone-400 hover:text-brand transition-colors"
+                                                    >
+                                                        <span className="material-symbols-outlined text-sm">edit</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); onDeleteTask(t.id); }}
+                                                        className="size-6 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
+                                                    >
+                                                        <span className="material-symbols-outlined text-sm">delete</span>
+                                                    </button>
                                                 </div>
                                             </div>
                                             {t.desc && <p onClick={() => onEditTask(t)} className="text-[10px] text-stone-500 dark:text-zinc-400 font-medium leading-relaxed mt-1 cursor-pointer">{t.desc}</p>}
-
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); onDeleteTask(t.id); }}
-                                                className="absolute -right-2 -top-2 size-8 rounded-full bg-white dark:bg-zinc-800 shadow-lg border border-stone-100 dark:border-zinc-700 flex items-center justify-center text-red-500 opacity-0 group-hover/card:opacity-100 transition-all active:scale-90 z-10"
-                                            >
-                                                <span className="material-symbols-outlined text-sm font-black">delete</span>
-                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -677,9 +688,10 @@ const CalendarView = ({ tasks, goals, onAddClick, onDeleteGoal, onToggleTask, on
     );
 };
 
-// Version Control
-const APP_VERSION = '1.0.2'; // Must match config.xml version
+// Remote Version & Subscriptions
+const APP_VERSION = '1.0.2';
 const VERSION_CONTROL_URL = 'https://raw.githubusercontent.com/isthejota/Minha-Bagunca/main/version-control.json';
+const PREMIUM_LINK = 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=41e63f17552c4ae8bd3e967608d2097d';
 
 const firebaseConfig = {
     apiKey: "AIzaSyDk9GDK_5ixlYhHXkjOm_1m8fkkvuyQ5qQ",
@@ -698,6 +710,66 @@ const db = window.firebase ? window.firebase.firestore() : null;
 const auth = window.firebase ? window.firebase.auth() : null;
 const googleProvider = window.firebase ? new window.firebase.auth.GoogleAuthProvider() : null;
 
+const PremiumModal = ({ show, onClose }) => {
+    if (!show) return null;
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+            <div className="absolute inset-0 bg-stone-900/80 backdrop-blur-md" onClick={onClose}></div>
+            <div className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-[3rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border border-stone-100 dark:border-zinc-800" onClick={e => e.stopPropagation()}>
+                <div className="h-40 bg-brand flex flex-col items-center justify-center relative overflow-hidden">
+                    <div className="absolute inset-0 opacity-10">
+                        {[...Array(20)].map((_, i) => (
+                            <span key={i} className="material-symbols-outlined absolute text-4xl" style={{ top: Math.random() * 100 + '%', left: Math.random() * 100 + '%' }}>star</span>
+                        ))}
+                    </div>
+                    <div className="size-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm mb-2">
+                        <span className="material-symbols-outlined text-5xl text-white filled">workspace_premium</span>
+                    </div>
+                    <h3 className="text-white text-xl font-black uppercase tracking-tighter italic">Seja Premium</h3>
+                </div>
+
+                <div className="p-8 space-y-6 text-center">
+                    <p className="text-sm font-bold text-stone-600 dark:text-zinc-400">Desbloqueie todo o potencial da sua criatividade por apenas <span className="text-brand font-black">R$ 9,99/mês</span>.</p>
+
+                    <div className="space-y-3 text-left">
+                        {[
+                            { icon: 'palette', text: 'Cores e Temas Personalizados' },
+                            { icon: 'dark_mode', text: 'Modo Escuro Completo' },
+                            { icon: 'calendar_month', text: 'Visualização de Agenda' },
+                            { icon: 'target', text: 'Sistema de Metas Inteligentes' },
+                            { icon: 'cleaning_services', text: 'Limpeza e Gestão Avançada' }
+                        ].map((feat, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                                <div className="size-6 rounded-lg bg-brand/10 flex items-center justify-center text-brand">
+                                    <span className="material-symbols-outlined text-sm filled">{feat.icon}</span>
+                                </div>
+                                <span className="text-xs font-bold text-stone-700 dark:text-zinc-300">{feat.text}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="space-y-3 pt-4">
+                        <a
+                            href={PREMIUM_LINK}
+                            target="_system"
+                            className="block w-full py-4 bg-brand text-white rounded-2xl font-black text-center shadow-lg shadow-brand/20 active:scale-95 transition-all"
+                        >
+                            Assinar Agora
+                        </a>
+                        <button
+                            onClick={onClose}
+                            className="w-full py-2 text-xs font-black text-stone-400 uppercase tracking-widest hover:text-stone-600 dark:hover:text-zinc-200 transition-colors"
+                        >
+                            Talvez mais tarde
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const App = () => {
 
     const [user, setUser] = useState(null);
@@ -711,13 +783,6 @@ const App = () => {
         }
         const unsubscribe = auth.onAuthStateChanged((currentUser) => {
             setUser(currentUser);
-            if (currentUser) {
-                // Determine profile from Google
-                setProfile({
-                    name: currentUser.displayName || 'Mente Criativa',
-                    photo: currentUser.photoURL || 'https://picsum.photos/seed/artist/200'
-                });
-            }
             setAuthLoading(false);
         });
         return () => unsubscribe();
@@ -813,6 +878,20 @@ const App = () => {
         if (auth) {
             await auth.signOut();
             setUser(null);
+            // Reset state to defaults on logout
+            setTasks([]);
+            setGoals([]);
+            setProfile({ name: 'Mente Criativa', photo: 'https://picsum.photos/seed/artist/200' });
+            setDarkMode(false);
+            setThemeColor('#ee9d2b');
+            setRemindersEnabled(true);
+            setAlarmSound(null);
+            // Clear local cache
+            localStorage.removeItem('minha-bagunca-profile');
+            localStorage.removeItem('minha-bagunca-reminders');
+            localStorage.removeItem('minha-bagunca-alarm-sound');
+            localStorage.removeItem('minha-bagunca-darkmode');
+            localStorage.removeItem('minha-bagunca-themecolor');
         }
     };
 
@@ -824,49 +903,62 @@ const App = () => {
     const [newGoal, setNewGoal] = useState({
         title: '',
         progress: 0,
-        days: [], // [0, 1, 2, 3, 4, 5, 6] for Sun-Sat
+        days: [],
         hours: ['08:00'],
         frequency: 1
     });
     const [updateRequired, setUpdateRequired] = useState(false);
     const [updateInfo, setUpdateInfo] = useState(null);
 
-    // profile: name + photo (data URL or remote URL)
+    // --- Account-bound States (Synced with Firestore) ---
+    const isCloudLoadedRef = useRef(false);
+    const [isPremium, setIsPremium] = useState(() => {
+        return localStorage.getItem('minha-bagunca-premium') === 'true';
+    });
+    const [showPremiumAd, setShowPremiumAd] = useState(false);
+
+    // profile: name + photo (data URL or remote URL from Google)
     const [profile, setProfile] = useState(() => {
         const saved = localStorage.getItem('minha-bagunca-profile');
-        return saved ? JSON.parse(saved) : { name: 'Mente Criativa', photo: 'https://picsum.photos/seed/artist/200' };
+        try { return saved ? JSON.parse(saved) : { name: 'Mente Criativa', photo: 'https://picsum.photos/seed/artist/200' }; } catch (e) { return { name: 'Mente Criativa', photo: 'https://picsum.photos/seed/artist/200' }; }
     });
 
-    // reminders on/off
+    const [darkMode, setDarkMode] = useState(() => {
+        const saved = localStorage.getItem('minha-bagunca-darkmode');
+        return saved ? JSON.parse(saved) : false;
+    });
+
+    const [themeColor, setThemeColor] = useState(() => {
+        const saved = localStorage.getItem('minha-bagunca-themecolor');
+        return saved || '#ee9d2b';
+    });
+
     const [remindersEnabled, setRemindersEnabled] = useState(() => {
         const s = localStorage.getItem('minha-bagunca-reminders');
         return s ? JSON.parse(s) : true;
     });
 
-    // alarm sound object { uri, name, channelId }
     const [alarmSound, setAlarmSound] = useState(() => {
         const saved = localStorage.getItem('minha-bagunca-alarm-sound');
-        if (!saved) return null;
-        try {
-            return JSON.parse(saved);
-        } catch (e) {
-            return { uri: saved, name: 'Música selecionada', channelId: 'alarm_channel_default' };
-        }
+        try { return saved ? JSON.parse(saved) : null; } catch (e) { return null; }
     });
 
     const reminderTimeoutsRef = useRef([]);
 
     // --- Cloud Sync State ---
-    const [tasks, setTasks] = useState([]); // Empty initially, filled by Firestore
-    const [goals, setGoals] = useState([]); // Sync with Firestore
+    const [tasks, setTasks] = useState([]);
+    const [goals, setGoals] = useState([]);
     const [loadingData, setLoadingData] = useState(false);
 
-    // Initial Data Load & Real-time Sync
+    // --- Cloud Synchronization and Listeners ---
     useEffect(() => {
-        if (!user || !db) return;
+        if (!user || !db) {
+            isCloudLoadedRef.current = false;
+            return;
+        }
         setLoadingData(true);
 
-        // 1. Sync Tasks
+        // 1. Sync Tasks (Real-time)
         const tasksRef = db.collection('users').doc(user.uid).collection('tasks');
         const unsubTasks = tasksRef.onSnapshot((snapshot) => {
             const cloudTasks = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -877,7 +969,7 @@ const App = () => {
             setLoadingData(false);
         });
 
-        // 2. Sync Goals
+        // 2. Sync Goals (Real-time)
         const goalsRef = db.collection('users').doc(user.uid).collection('goals');
         const unsubGoals = goalsRef.onSnapshot((snapshot) => {
             const cloudGoals = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -886,24 +978,38 @@ const App = () => {
             console.error("Error syncing goals:", error);
         });
 
-        // 3. Sync Settings (Profile, Dark Mode, etc.)
+        // 3. Sync Settings and Preferences
         const settingsRef = db.collection('users').doc(user.uid).collection('settings').doc('preferences');
         const unsubSettings = settingsRef.onSnapshot((docSnap) => {
             if (docSnap.exists) {
                 const data = docSnap.data();
-                if (data.profile) setProfile(data.profile);
+                // Prioritize cloud data, but only update state if it's actually different to avoid cycles
+                if (data.profile) setProfile(prev => JSON.stringify(prev) === JSON.stringify(data.profile) ? prev : data.profile);
                 if (data.darkMode !== undefined) setDarkMode(data.darkMode);
                 if (data.themeColor) setThemeColor(data.themeColor);
                 if (data.remindersEnabled !== undefined) setRemindersEnabled(data.remindersEnabled);
+                if (data.alarmSound !== undefined) setAlarmSound(prev => JSON.stringify(prev) === JSON.stringify(data.alarmSound) ? prev : data.alarmSound);
+                if (data.isPremium !== undefined) setIsPremium(data.isPremium);
+
+                // Show promotion if not premium on entry
+                if (!data.isPremium) {
+                    setShowPremiumAd(true);
+                }
             } else {
-                // If no settings exist yet, save current defaults
+                // Initialize default profile for new users based on Auth info (Google/Email)
                 settingsRef.set({
-                    profile,
-                    darkMode,
-                    themeColor,
-                    remindersEnabled
+                    profile: {
+                        name: user.displayName || 'Mente Criativa',
+                        photo: user.photoURL || 'https://picsum.photos/seed/artist/200'
+                    },
+                    darkMode: false,
+                    themeColor: '#ee9d2b',
+                    remindersEnabled: true,
+                    alarmSound: null,
+                    isPremium: false
                 }, { merge: true });
             }
+            isCloudLoadedRef.current = true; // Mark as loaded so auto-save can begin
         });
 
         return () => {
@@ -917,44 +1023,38 @@ const App = () => {
     // We wrap these to replace the old local state setters where appropriate, 
     // or we just rely on the onSnapshot to update the UI.
 
-    // Helper to write settings to cloud
-    const saveSettingsToCloud = async (key, value) => {
-        if (!user || !db) return;
-        try {
-            await db.collection('users').doc(user.uid).collection('settings').doc('preferences').set({
-                [key]: value
-            }, { merge: true });
-        } catch (e) {
-            console.error("Error saving setting:", key, e);
-        }
-    };
-
-    // Modified setters to sync to cloud
-    // Note: We keep the local setters (setDarkMode etc) to allow instant UI feedback, 
-    // but the Source of Truth is now Cloud. onSnapshot will reconcile.
-
-    // persist profile and reminders setting -> Moved to saveSettingsToCloud calls
-    useEffect(() => { if (user) saveSettingsToCloud('profile', profile); }, [profile]);
-    useEffect(() => { if (user) saveSettingsToCloud('remindersEnabled', remindersEnabled); }, [remindersEnabled]);
-    // Alarm sound is local-only preference usually, or we can sync it. Let's sync it.
-    useEffect(() => { if (user && alarmSound) saveSettingsToCloud('alarmSound', alarmSound); }, [alarmSound]);
-
-    // dark mode
-    const [darkMode, setDarkMode] = useState(false);
+    // Consolidated Cloud Save & Local Cache
     useEffect(() => {
-        try {
-            if (darkMode) document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark');
-            if (user) saveSettingsToCloud('darkMode', darkMode);
-        } catch (e) { }
+        if (!user || !db || !isCloudLoadedRef.current) return;
+
+        const settingsRef = db.collection('users').doc(user.uid).collection('settings').doc('preferences');
+        settingsRef.set({
+            profile,
+            darkMode,
+            themeColor,
+            remindersEnabled,
+            alarmSound,
+            isPremium
+        }, { merge: true }).catch(e => console.error("Error saving preferences:", e));
+
+        // Update local cache for better responsiveness on next load
+        localStorage.setItem('minha-bagunca-profile', JSON.stringify(profile));
+        localStorage.setItem('minha-bagunca-darkmode', JSON.stringify(darkMode));
+        localStorage.setItem('minha-bagunca-themecolor', themeColor);
+        localStorage.setItem('minha-bagunca-reminders', JSON.stringify(remindersEnabled));
+        if (alarmSound) localStorage.setItem('minha-bagunca-alarm-sound', JSON.stringify(alarmSound));
+        else localStorage.removeItem('minha-bagunca-alarm-sound');
+        localStorage.setItem('minha-bagunca-premium', isPremium.toString());
+    }, [user, profile, darkMode, themeColor, remindersEnabled, alarmSound, isPremium]);
+
+    // Apply Theme (Visual only)
+    useEffect(() => {
+        if (darkMode) document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark');
     }, [darkMode]);
 
     // document modal for Policies/Terms
     const [docModal, setDocModal] = useState({ show: false, title: '', content: '' });
-
-    // theme color
-    const [themeColor, setThemeColor] = useState('#ee9d2b');
     useEffect(() => {
-        // ... (existing theme CSS logic) ...
         const r = parseInt(themeColor.slice(1, 3), 16);
         const g = parseInt(themeColor.slice(3, 5), 16);
         const b = parseInt(themeColor.slice(5, 7), 16);
@@ -974,8 +1074,6 @@ const App = () => {
         document.documentElement.style.setProperty('--bg-paper', paperBg);
         document.documentElement.style.setProperty('--grid-color', gridColor);
         document.documentElement.style.setProperty('--border-weak', `rgba(${r}, ${g}, ${b}, 0.1)`);
-
-        if (user) saveSettingsToCloud('themeColor', themeColor);
     }, [themeColor, darkMode]);
 
     // Version Check
@@ -1013,6 +1111,10 @@ const App = () => {
 
     // CRUD for Tasks (Firestore)
     const deleteFutureTasks = async () => {
+        if (!isPremium) {
+            setShowPremiumAd(true);
+            return;
+        }
         if (!user || !db) return;
         const todayStr = new Date().toISOString().split('T')[0];
         try {
@@ -1175,7 +1277,11 @@ const App = () => {
         }
     };
 
-    const handleOpenAdd = (dateStr, type = 'task') => {
+    const handleOpenAdd = (dateStr = null, type = 'task') => {
+        if (!isPremium && type === 'note' && view === 'calendar') {
+            setShowPremiumAd(true);
+            return;
+        }
         setNewTask({
             title: '',
             desc: '',
@@ -1221,6 +1327,10 @@ const App = () => {
     };
 
     const handleAddGoal = async () => {
+        if (!isPremium) {
+            setShowPremiumAd(true);
+            return;
+        }
         if (!newGoal.title || !user || !db) return;
         try {
             // 1. Create the Goal
@@ -1535,24 +1645,34 @@ const App = () => {
                     </header>
 
                     <main className="flex-1 px-6 pt-6 pb-32 overflow-y-auto no-scrollbar">
-                        {view === 'dashboard' && <Dashboard tasks={tasks} goals={goals} onAddGoal={() => setShowAddGoal(true)} onDeleteGoal={deleteGoal} darkMode={darkMode} />}
+                        {view === 'dashboard' && <Dashboard tasks={tasks} goals={goals} onAddGoal={() => { if (!isPremium) { showAppAlert("Plano Premium", "O sistema de Metas é exclusivo para assinantes Premium ✨"); setShowPremiumAd(true); } else setShowAddGoal(true); }} onDeleteGoal={deleteGoal} darkMode={darkMode} />}
                         {view === 'daily' && <DailyList tasks={tasks} onToggle={toggleTask} onDelete={deleteTask} onEdit={handleEditTask} darkMode={darkMode} />}
                         {view === 'calendar' && (
                             <CalendarView
                                 tasks={tasks}
                                 goals={goals}
                                 onDeleteGoal={deleteGoal}
-                                onAddClick={() => setShowAddGoal(true)}
+                                onAddClick={() => handleOpenAdd()}
                                 onToggleTask={toggleTask}
                                 onDeleteTask={deleteTask}
                                 darkMode={darkMode}
                                 onOpenAdd={handleOpenAdd}
                                 onEditTask={handleEditTask}
+                                isPremium={isPremium}
+                                onLockClick={() => {
+                                    showAppAlert("Recurso Premium", "A visualização de Agenda é exclusiva para assinantes.");
+                                    setShowPremiumAd(true);
+                                }}
                             />
                         )}
                         {view === 'settings' && (
                             <div className="space-y-6 animate-content">
-                                <div className="bg-white dark:bg-zinc-900 p-8 rounded-[3rem] border border-stone-100 dark:border-zinc-800 flex flex-col items-center gap-4 text-center">
+                                <div className="bg-white dark:bg-zinc-900 p-8 rounded-[3rem] border border-stone-100 dark:border-zinc-800 flex flex-col items-center gap-4 text-center relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-4">
+                                        <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${isPremium ? 'bg-brand text-white' : 'bg-stone-100 text-stone-400'}`}>
+                                            {isPremium ? 'Premium' : 'Gratuito'}
+                                        </div>
+                                    </div>
                                     <div className="size-24 rounded-[2rem] overflow-hidden rotate-6 shadow-xl border-4 border-white dark:border-zinc-800">
                                         <img src={profile.photo} className="size-full object-cover" alt="avatar" />
                                     </div>
@@ -1564,7 +1684,7 @@ const App = () => {
                                             className="w-full text-2xl font-black bg-white dark:bg-zinc-800 rounded-[2rem] border-none shadow-sm p-4 text-center dark:text-zinc-100"
                                         />
                                         <div className="mt-2 flex flex-col items-center">
-                                            <p className="text-xs text-stone-400 font-bold uppercase tracking-widest leading-none">Plano Bagunça Premium</p>
+                                            <p className="text-xs text-stone-400 font-bold uppercase tracking-widest leading-none">Minha Bagunça</p>
                                             <p className="text-[9px] text-stone-300 dark:text-zinc-600 font-bold mt-1 truncate max-w-[200px]">{user.email}</p>
                                         </div>
                                         <div className="mt-4 flex gap-3 justify-center">
@@ -1574,6 +1694,20 @@ const App = () => {
                                         </div>
                                     </div>
                                 </div>
+                                {!isPremium && (
+                                    <div className="bg-brand p-6 rounded-[3rem] text-white flex items-center justify-between shadow-lg shadow-brand/20 active:scale-[0.98] transition-all cursor-pointer" onClick={() => setShowPremiumAd(true)}>
+                                        <div className="flex items-center gap-4">
+                                            <div className="size-12 rounded-2xl bg-white/20 flex items-center justify-center">
+                                                <span className="material-symbols-outlined text-3xl filled">workspace_premium</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-black uppercase tracking-tighter italic">Liberar Premium</span>
+                                                <span className="text-[10px] font-bold opacity-80 uppercase tracking-widest leading-none">Apenas R$ 9,99/mês</span>
+                                            </div>
+                                        </div>
+                                        <span className="material-symbols-outlined text-3xl">chevron_right</span>
+                                    </div>
+                                )}
                                 <div className="bg-white dark:bg-zinc-900 rounded-[3rem] border border-stone-100 dark:border-zinc-800 overflow-hidden divide-y divide-stone-50 dark:divide-zinc-800">
                                     <div className="p-6 flex flex-col gap-4 hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors">
                                         <div className="flex items-center justify-between">
@@ -1623,8 +1757,15 @@ const App = () => {
                                             ].map(c => (
                                                 <button
                                                     key={c.color}
-                                                    onClick={() => setThemeColor(c.color)}
-                                                    className={`size-10 rounded-full flex-shrink-0 transition-all ${themeColor === c.color ? 'scale-125 ring-4 ring-white dark:ring-zinc-800 shadow-xl' : 'scale-90 hover:scale-110 shadow-sm'}`}
+                                                    onClick={() => {
+                                                        if (!isPremium) {
+                                                            showAppAlert("Estilo Premium", "A personalização de cores está disponível apenas na versão Premium 🎨");
+                                                            setShowPremiumAd(true);
+                                                        } else {
+                                                            setThemeColor(c.color);
+                                                        }
+                                                    }}
+                                                    className={`size-10 rounded-full flex-shrink-0 transition-all ${themeColor === c.color ? 'scale-125 ring-4 ring-white dark:ring-zinc-800 shadow-xl' : 'scale-90 hover:scale-110 shadow-sm'} ${!isPremium && 'opacity-50 grayscale-[0.5]'}`}
                                                     style={{ backgroundColor: c.color }}
                                                     aria-label={c.name}
                                                 />
@@ -1639,11 +1780,18 @@ const App = () => {
                                             <span className="text-sm font-black text-stone-700 dark:text-zinc-300">Modo Noturno Premium</span>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <label className="switch small">
-                                                <input type="checkbox" checked={darkMode} onChange={e => setDarkMode(e.target.checked)} />
-                                                <span className="slider"></span>
-                                            </label>
-                                            <span className="switch-label dark:text-zinc-400">{darkMode ? 'Ativado' : 'Desativado'}</span>
+                                            <div className="flex items-center gap-3" onClick={() => {
+                                                if (!isPremium) {
+                                                    showAppAlert("Visão Noturna", "O Modo Escuro é um recurso exclusivo para membros Premium 🌙");
+                                                    setShowPremiumAd(true);
+                                                }
+                                            }}>
+                                                <label className={`switch small ${!isPremium ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                    <input type="checkbox" checked={darkMode} onChange={e => setDarkMode(e.target.checked)} disabled={!isPremium} />
+                                                    <span className="slider"></span>
+                                                </label>
+                                                <span className="switch-label dark:text-zinc-400">{darkMode ? 'Ativado' : 'Desativado'}</span>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="p-6 flex items-center justify-between hover:bg-stone-50 dark:hover:bg-zinc-800/50 transition-colors">
@@ -1674,7 +1822,14 @@ const App = () => {
                                         </div>
                                         <div className="text-sm text-stone-400 dark:text-zinc-500">Abrir</div>
                                     </div>
-                                    <div className="p-6 flex items-center justify-between hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors cursor-pointer" onClick={deleteFutureTasks}>
+                                    <div className="p-6 flex items-center justify-between hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors cursor-pointer" onClick={() => {
+                                        if (!isPremium) {
+                                            showAppAlert("Organização Avançada", "A limpeza global de lembretes é uma ferramenta exclusiva Premium 🧹");
+                                            setShowPremiumAd(true);
+                                        } else {
+                                            deleteFutureTasks();
+                                        }
+                                    }}>
                                         <div className="flex items-center gap-4">
                                             <div className="size-10 rounded-2xl bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center">
                                                 <span className="material-symbols-outlined filled">delete_sweep</span>
@@ -1813,8 +1968,15 @@ const App = () => {
                                                             <button
                                                                 key={opt}
                                                                 type="button"
-                                                                onClick={() => setNewTask({ ...newTask, alarm: opt })}
-                                                                className={`flex-1 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${newTask.alarm === opt ? 'bg-brand text-white shadow-lg' : 'bg-stone-50 dark:bg-zinc-800 text-stone-400'}`}
+                                                                onClick={() => {
+                                                                    if (!isPremium && opt !== 'Padrão') {
+                                                                        showAppAlert("Notificações Avançadas", "A escolha individual de alarme por tarefa é um recurso Premium 🔔");
+                                                                        setShowPremiumAd(true);
+                                                                    } else {
+                                                                        setNewTask({ ...newTask, alarm: opt });
+                                                                    }
+                                                                }}
+                                                                className={`flex-1 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${newTask.alarm === opt ? 'bg-brand text-white shadow-lg' : 'bg-stone-50 dark:bg-zinc-800 text-stone-400'} ${!isPremium && opt !== 'Padrão' ? 'opacity-50' : ''}`}
                                                             >
                                                                 {opt}
                                                             </button>
@@ -2017,6 +2179,8 @@ const App = () => {
                     </div>
                 </div>
             )}
+            {/* Premium Activation Modal */}
+            <PremiumModal show={showPremiumAd} onClose={() => setShowPremiumAd(false)} />
         </>
     );
 };
